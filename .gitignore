@@ -1,0 +1,19 @@
+# System
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Environments
+venv/
+.venv/
+
+# Secrets
+.env
+
+# Jupyter
+.ipynb_checkpoints
+
+# Project Data
+data/
