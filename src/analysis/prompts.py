@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 # 1. FIND THE FOLDER

@@ -1,7 +1,5 @@
 from psycopg2.extras import execute_values
 
-from psycopg2.extras import execute_values
-
 def save_fixture(conn, fixture_data):
     """
     Saves a single fixture to the database.

@@ -30,9 +30,9 @@ class ClarityEngine:
             cur = self.conn.cursor()
             cur.execute("""
                 SELECT full_json FROM analysis_reports 
-                WHERE fixture_id = %s AND prompt_version = %s 
+                WHERE fixture_id = %s AND prompt_version = %s AND model_name = %s
                 ORDER BY created_at DESC LIMIT 1
-            """, (fixture_id, prompt_key))
+            """, (fixture_id, prompt_key, self.model))
             row = cur.fetchone()
             if row:
                 print("   ⚡ Cache Hit! Loaded from DB.")

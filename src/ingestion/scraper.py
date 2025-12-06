@@ -1,3 +1,4 @@
+import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -7,6 +8,9 @@ import time
 import sys
 from io import StringIO
 from pathlib import Path
+
+# Silence webdriver_manager logs
+os.environ.setdefault("WDM_LOG", "0")
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
