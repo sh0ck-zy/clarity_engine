@@ -57,26 +57,30 @@ class BatchRunner:
             print(f"❌ Erro na Ronda {round_id}: {e}")
 
     def run_round_truth(self, round_id: int, season: str = "2025-2026"):
-        """Gera a 'Verdade' (Auditoria) para todos os jogos TERMINADOS de uma ronda."""
+        """Gera a 'Verdade' apenas para jogos que AINDA NÃO têm relatório."""
         print(f"\n🕵️‍♀️ A auditar a verdade para a Ronda {round_id} ({season})...")
         
         if not self.conn:
             return
 
         query = """
-            SELECT id, home_team, away_team, date 
-            FROM fixtures 
-            WHERE season = %s AND round = %s AND status = 'FINISHED'
-            ORDER BY date ASC
+            SELECT f.id, f.home_team, f.away_team, f.date 
+            FROM fixtures f
+            LEFT JOIN match_reality mr ON f.id = mr.fixture_id
+            WHERE f.season = %s 
+              AND f.round = %s 
+              AND f.status = 'FINISHED'
+              AND mr.fixture_id IS NULL 
+            ORDER BY f.date ASC
         """
         
         try:
             df = pd.read_sql(query, self.conn, params=(season, round_id))
             if df.empty:
-                print(f"⚠️  Nenhum jogo TERMINADO encontrado na Ronda {round_id}.")
+                print(f"✅ Ronda {round_id} já está totalmente auditada (ou sem jogos terminados).")
                 return
 
-            print(f"📋 A auditar {len(df)} jogos da Ronda {round_id}.")
+            print(f"📋 A auditar {len(df)} jogos NOVOS da Ronda {round_id}.")
             seeker = RealitySeeker()
 
             for idx, row in df.iterrows():
@@ -87,7 +91,7 @@ class BatchRunner:
             if hasattr(seeker, 'close'):
                 seeker.close()
             
-            print(f"✅ Ronda {round_id} auditada com sucesso.")
+            print(f"✅ Novos jogos da Ronda {round_id} auditados.")
 
         except Exception as e:
             print(f"❌ Erro na Auditoria da Ronda {round_id}: {e}")

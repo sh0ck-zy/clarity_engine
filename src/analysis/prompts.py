@@ -19,6 +19,11 @@ PROMPTS = {
     "contrarian": {
         "name": "Contrarian (Risky - The Auditor)",
         "text": load_prompt("v2_contrarian.txt")
+    },
+    # NOVA PROMPT ADICIONADA
+    "v3": {
+        "name": "Enhanced Hybrid (Crisis Aware)",
+        "text": load_prompt("v3_enhanced.txt")
     }
 }
 
