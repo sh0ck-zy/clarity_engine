@@ -23,6 +23,75 @@ class BatchRunner:
         df = pd.read_sql(query, self.conn, params=tuple(params))
         return df["id"].tolist()
 
+    def run_round_predictions(self, round_id: int, season: str = "2025-2026", prompt_version: str = "hybrid"):
+        """Gera previsões para TODOS os jogos de uma ronda específica."""
+        print(f"\n🚀 A iniciar previsões para a Ronda {round_id} ({season})...")
+        
+        if not self.conn:
+            return
+
+        query = """
+            SELECT id, home_team, away_team 
+            FROM fixtures 
+            WHERE season = %s AND round = %s 
+            ORDER BY date ASC
+        """
+        
+        try:
+            df = pd.read_sql(query, self.conn, params=(season, round_id))
+            if df.empty:
+                print(f"⚠️  Nenhum jogo encontrado para a Ronda {round_id}.")
+                return
+
+            print(f"📋 Encontrados {len(df)} jogos na Ronda {round_id}.")
+            engine = ClarityEngine()
+
+            for idx, row in df.iterrows():
+                print(f"[{idx+1}/{len(df)}] 🧠 Analisando: {row['home_team']} vs {row['away_team']}")
+                engine.run_analysis(row['id'], prompt_version, force_refresh=False)
+            
+            engine.close()
+            print(f"✅ Ronda {round_id} concluída (Previsões).")
+
+        except Exception as e:
+            print(f"❌ Erro na Ronda {round_id}: {e}")
+
+    def run_round_truth(self, round_id: int, season: str = "2025-2026"):
+        """Gera a 'Verdade' (Auditoria) para todos os jogos TERMINADOS de uma ronda."""
+        print(f"\n🕵️‍♀️ A auditar a verdade para a Ronda {round_id} ({season})...")
+        
+        if not self.conn:
+            return
+
+        query = """
+            SELECT id, home_team, away_team, date 
+            FROM fixtures 
+            WHERE season = %s AND round = %s AND status = 'FINISHED'
+            ORDER BY date ASC
+        """
+        
+        try:
+            df = pd.read_sql(query, self.conn, params=(season, round_id))
+            if df.empty:
+                print(f"⚠️  Nenhum jogo TERMINADO encontrado na Ronda {round_id}.")
+                return
+
+            print(f"📋 A auditar {len(df)} jogos da Ronda {round_id}.")
+            seeker = RealitySeeker()
+
+            for idx, row in df.iterrows():
+                print(f"[{idx+1}/{len(df)}] 🔍 Auditando: {row['home_team']} vs {row['away_team']}")
+                seeker.run_reality_check(row['id'])
+                time.sleep(1)  # Pausa simpática para a API
+            
+            if hasattr(seeker, 'close'):
+                seeker.close()
+            
+            print(f"✅ Ronda {round_id} auditada com sucesso.")
+
+        except Exception as e:
+            print(f"❌ Erro na Auditoria da Ronda {round_id}: {e}")
+
     def run_specific_match(self, fixture_id: str, prompt_version: str = "hybrid", force: bool = False) -> None:
         """Executa análise (PREVISÃO) para um fixture específico (modo teste)."""
         print(f"\n🎯 Analisando fixture (Prediction): {fixture_id}")
@@ -142,21 +211,26 @@ class BatchRunner:
     # --- NOVOS MÉTODOS DE REALIDADE (TRUTH) ---
 
     def run_specific_reality_check(self, fixture_id: str):
-        """Executa a busca da verdade para UM jogo específico."""
         print(f"\n🕵️‍♀️ A investigar a verdade para: {fixture_id}...")
         
         seeker = RealitySeeker()
         try:
             result = seeker.run_reality_check(fixture_id)
             if result:
-                # Novo contrato: score.final + probabilistic_view + tactical_summary
-                final_score = result.get("score", {}).get("final")
-                luck = result.get("probabilistic_view", {}).get("luck_factor")
-                game_flow = result.get("tactical_summary", {}).get("game_flow", "")
-
-                print(f"✅ Sucesso! Score final: {final_score} | Luck: {luck}")
-                if game_flow:
-                    print(f"📝 Game flow (realidade): {game_flow[:200]}...")
+                # --- ATUALIZADO PARA NOVA ESTRUTURA ---
+                final_score = result.get("score", {}).get("final", "N/A")
+                
+                # Campos novos do Auditor Forense
+                truth = result.get("truth_vector", {})
+                audit = result.get("stat_audit", {})
+                
+                winner = truth.get("actual_winner", "?")
+                luck = truth.get("luck_factor", "?")
+                lie = audit.get("stat_lie_detected", False)
+                
+                print(f"✅ Sucesso! Score: {final_score} | Vencedor Real: {winner}")
+                print(f"⚖️  Luck Factor: {luck} | Stats Mentiram? {'SIM' if lie else 'Não'}")
+                print(f"📝 Veredicto: {audit.get('explanation', '')[:150]}...")
             else:
                 print("❌ Falha ao obter verdade.")
         except Exception as e:

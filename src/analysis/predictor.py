@@ -16,7 +16,7 @@ from src.database.config import get_connection
 load_dotenv()
 
 class ClarityEngine:
-    def __init__(self, model="gpt-4o"):
+    def __init__(self, model="gpt-5.1"):
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=self.api_key)
         self.model = model

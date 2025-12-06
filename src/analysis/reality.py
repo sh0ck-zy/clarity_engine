@@ -30,12 +30,17 @@ class RealitySeeker:
             return None
         try:
             cur = self.conn.cursor()
+            # Extended query to fetch PPDA and Field Tilt
             query = """
                 SELECT 
                     f.home_team, f.away_team, f.date, 
                     f.home_score, f.away_score,
                     MAX(CASE WHEN ts.is_home THEN ts.xg END) as xg_home,
-                    MAX(CASE WHEN NOT ts.is_home THEN ts.xg END) as xg_away
+                    MAX(CASE WHEN NOT ts.is_home THEN ts.xg END) as xg_away,
+                    MAX(CASE WHEN ts.is_home THEN ts.ppda END) as ppda_home,
+                    MAX(CASE WHEN NOT ts.is_home THEN ts.ppda END) as ppda_away,
+                    MAX(CASE WHEN ts.is_home THEN ts.field_tilt END) as tilt_home,
+                    MAX(CASE WHEN NOT ts.is_home THEN ts.field_tilt END) as tilt_away
                 FROM fixtures f
                 LEFT JOIN team_stats ts ON f.id = ts.fixture_id
                 WHERE f.id = %s
@@ -50,8 +55,12 @@ class RealitySeeker:
                     "date": str(row[2]),
                     "home_score": row[3],
                     "away_score": row[4],
-                    "xg_home": float(row[5]) if row[5] else 0.0,
-                    "xg_away": float(row[6]) if row[6] else 0.0
+                    "xg_home": float(row[5]) if row[5] is not None else 0.0,
+                    "xg_away": float(row[6]) if row[6] is not None else 0.0,
+                    "ppda_home": float(row[7]) if row[7] is not None else None,
+                    "ppda_away": float(row[8]) if row[8] is not None else None,
+                    "tilt_home": float(row[9]) if row[9] is not None else None,
+                    "tilt_away": float(row[10]) if row[10] is not None else None,
                 }
         except Exception as e:
             logger.error(f"❌ DB Fetch Error: {e}")
@@ -67,80 +76,53 @@ class RealitySeeker:
                 logger.error("❌ Save Truth Error: data is not a dict")
                 return
 
-            # Extract structured fields with fallbacks
-            score_block = data.get("score", {}) or {}
-            stats_block = data.get("stats", {}) or {}
-            prob_block = data.get("probabilistic_view", {}) or {}
-            tactical_block = data.get("tactical_summary", {}) or {}
+            # 1. New Structure Parsing
+            truth_vector = data.get("truth_vector", {})
+            stat_audit = data.get("stat_audit", {})
+            calibration = data.get("model_calibration_notes", {})
 
-            score_str = score_block.get("final") or score_block.get("score") or "0-0"
+            # 2. Extract Score (Sanity Check or Fallback)
+            score_block = data.get("score", {}) or {}
+            score_str = score_block.get("final") or "0-0"
             try:
                 sh, sa = map(int, score_str.split("-"))
-            except Exception:
-                sh, sa = 0, 0
+            except:
+                sh, sa = 0, 0 
 
-            def _float_or_none(val):
-                try:
-                    return float(val)
-                except Exception:
-                    return None
+            # 3. Map to Existing DB Columns
+            luck_factor = str(truth_vector.get("luck_factor", "Normal"))
 
-            def _int_or_none(val):
-                try:
-                    return int(val)
-                except Exception:
-                    return None
+            narrative_summary = (
+                f"AUDIT VERDICT: {stat_audit.get('explanation', 'No explanation provided.')}\n\n"
+                f"LOSER ANALYSIS: {calibration.get('what_went_wrong_for_loser', 'N/A')}"
+            )
 
-            xg_h = _float_or_none(stats_block.get("xg_home"))
-            xg_a = _float_or_none(stats_block.get("xg_away"))
-            poss_h = _int_or_none(stats_block.get("possession_home"))
-
-            key_events = data.get("key_events", [])
-            # Map richer narrative into existing columns
-            narrative_summary = tactical_block.get("game_flow") or ""
-            luck_factor = prob_block.get("luck_factor") or "Normal"
+            key_events = calibration.get("key_events", [])
 
             cur = self.conn.cursor()
             cur.execute("""
                 INSERT INTO match_reality 
                 (fixture_id, score_home, score_away, xg_home, xg_away, possession_home, 
                  key_events, narrative_summary, luck_factor, source_type)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'google_search_grounding')
+                VALUES (%s, %s, %s, NULL, NULL, NULL, %s, %s, %s, 'forensic_auditor')
                 ON CONFLICT (fixture_id) DO UPDATE SET
                 narrative_summary = EXCLUDED.narrative_summary,
                 luck_factor = EXCLUDED.luck_factor,
-                key_events = EXCLUDED.key_events
+                key_events = EXCLUDED.key_events,
+                source_type = 'forensic_auditor'
             """, (
                 fixture_id,
                 sh, sa,
-                xg_h, xg_a,
-                poss_h,
                 json.dumps(key_events),
                 narrative_summary,
                 luck_factor
             ))
             self.conn.commit()
-            logger.info("💾 Truth saved to Database.")
+            logger.info("💾 Forensic Truth saved to Database.")
         except Exception as e:
             logger.error(f"❌ Save Truth Error: {e}")
             if self.conn:
                 self.conn.rollback()
-
-    def run_reality_check(self, fixture_id):
-        db_stats = self._get_internal_stats(fixture_id)
-        if not db_stats:
-            logger.error(f"Fixture {fixture_id} not found in DB.")
-            return None
-        result = self.fetch_ground_truth(
-            db_stats['home_team'],
-            db_stats['away_team'],
-            db_stats['date'],
-            db_stats=db_stats
-        )
-        if result:
-            self._save_truth(fixture_id, result)
-            return result
-        return None
 
     @staticmethod
     def _parse_response_text(text: str):
@@ -166,124 +148,95 @@ class RealitySeeker:
         return json.loads(cleaned)
 
     def fetch_ground_truth(self, home_team, away_team, match_date, db_stats=None):
-        logger.info(f"Investigating truth for: {home_team} vs {away_team} on {match_date}")
+        logger.info(f"🕵️  Forensic Audit for: {home_team} vs {away_team} on {match_date}")
 
-        reference = ""
+        # Inject Internal Data if available
+        internal_evidence = ""
         if db_stats:
-            reference = f"""
---- INTERNAL REFERENCE DATA ---
-My DB says: Score {db_stats.get('home_score')}-{db_stats.get('away_score')}.
-xG: {db_stats.get('xg_home')} vs {db_stats.get('xg_away')}.
-WARNING: Trust the web search if it contradicts this.
--------------------------------
-"""
+            internal_evidence = f"""
+            === INTERNAL LAB DATA (PRE-MATCH MODEL INPUTS) ===
+            Final Score: {db_stats.get('home_score')} - {db_stats.get('away_score')}
+            xG: {db_stats.get('xg_home')} (Home) vs {db_stats.get('xg_away')} (Away)
+            PPDA: {db_stats.get('ppda_home', 'N/A')} (Home) vs {db_stats.get('ppda_away', 'N/A')} (Away)
+            Field Tilt: {db_stats.get('tilt_home', 'N/A')}% (Home)
+            Note: Compare these numbers against the match reports. Do they tell the full story?
+            """
 
         prompt = f"""
 ROLE:
-You are a post-match auditor for a football analytics engine.
-You MUST base everything on real published match reports and stats pages.
+You are a Forensic Football Auditor optimizing a predictive AI model.
+Your goal is NOT to write a news report. Your goal is to **validate the match statistics** against qualitative match reports to create a "Ground Truth" dataset.
 
-MATCH:
-- Home: {home_team}
-- Away: {away_team}
-- Date: {match_date}
+TARGET MATCH:
+- {home_team} vs {away_team} ({match_date})
+{internal_evidence}
 
-OBJECTIVE:
-Produce a structured, non-hallucinated post-match report that can be compared against a pre-match prediction.
-Separate raw facts, events, tactical interpretation, and fairness vs stats.
+INSTRUCTIONS:
+1. **Search**: Find post-match reports (BBC, Sky, Whoscored, Analyst articles) to understand the *nature* of the game.
+2. **Audit the Stats**: 
+   - Does the xG reflect the dominance? (e.g. Did a team accumulate "junk xG" when 3-0 down?)
+   - Was the result influenced by "High Variance" events (Red cards, penalties, massive errors)?
+3. **Define the Truth**: Create a structured summary that we can programmatically compare against our pre-match prediction.
 
-SEARCH REQUIREMENTS:
-- Use web search tools to open multiple sources:
-  - at least ONE traditional match report (BBC, Sky, Guardian, club sites)
-  - at least ONE stats site if available (FotMob, Sofascore, WhoScored, Understat, Opta-powered)
-- If stats like xG are not available, set them to null and state that in the analysis.
-- Prefer agreement between sources. If sources disagree, mention it.
-
-OUTPUT FORMAT (STRICT):
-Return ONLY raw JSON. No markdown. No ```json fences. No text before/after JSON.
-If you add ``` or any text outside JSON, the answer is INVALID.
-
-The JSON MUST have exactly these fields:
+OUTPUT FORMAT (JSON ONLY):
+Return raw JSON inside a fenced code block.
 {{
-  "meta": {{
-    "home_team": "{home_team}",
-    "away_team": "{away_team}",
-    "date": "{match_date}",
-    "competition": "string or null",
-    "sources": [
-      "main_text_source_1",
-      "main_text_source_2",
-      "main_stats_source_1"
-    ]
+  "meta": {{ "match": "{home_team} vs {away_team}" }},
+  "score": {{ "final": "H-A" }},
+  "truth_vector": {{
+    "actual_winner": "Home/Away/Draw",
+    "tactical_scenario": "One of: [Open End-to-End, Park the Bus, Midfield Attrition, Domination without Chances, Chaos/Transition]",
+    "game_state_impact": "Did an early goal change the game flow? (Yes/No)",
+    "luck_factor": "Score 0-10 (0=Pure Skill, 10=Pure Luck/Ref Error/Own Goal)"
   }},
-  "score": {{
-    "final": "H-A",
-    "ht_score": "H-A or null"
+  "stat_audit": {{
+    "xg_fidelity": "High/Medium/Low (Do the xG stats accurately represent who played better?)",
+    "stat_lie_detected": "Boolean (True if stats are misleading)",
+    "explanation": "Short sentence explaining why stats might be misleading (if applicable)."
   }},
-  "stats": {{
-    "xg_home": "float or null",
-    "xg_away": "float or null",
-    "possession_home": "float or null",
-    "shots_home": "int or null",
-    "shots_away": "int or null",
-    "shots_on_target_home": "int or null",
-    "shots_on_target_away": "int or null",
-    "big_chances_home": "int or null",
-    "big_chances_away": "int or null"
-  }},
-  "key_events": [
-    {{
-      "minute": "int or null",
-      "team": "home/away/neutral",
-      "type": "goal/penalty/missed_penalty/red_card/yellow_card/injury/big_chance/save/other",
-      "description": "short factual description based on sources"
-    }}
-  ],
-  "tactical_summary": {{
-    "game_flow": "objective description of how the game actually played out over 90 minutes",
-    "home_approach": "what home tried to do with and without the ball",
-    "away_approach": "what away tried to do with and without the ball",
-    "turning_points": [
-      "key moments that shifted control or win probability"
-    ]
-  }},
-  "probabilistic_view": {{
-    "did_result_match_stats": "yes/no/mixed",
-    "explanation": "did the scoreline look fair given xG, chances and territory",
-    "luck_factor": "Normal/Unlucky_for_home/Unlucky_for_away/High_Variance",
-    "notes": "short explanation connecting stats to perceived luck or variance"
-  }},
-  "comparison_hooks": {{
-    "dominant_zones": "who controlled territory and in what phases",
-    "threat_profile_home": "how home created danger (crosses, cutbacks, counters, set pieces)",
-    "threat_profile_away": "same for away",
-    "structural_weaknesses_exposed": [
-      "bulleted patterns that matter for model updates"
-    ]
+  "model_calibration_notes": {{
+    "what_went_wrong_for_loser": "Tactical mismatch? Individual error? Fatigue?",
+    "key_events": ["Red Card 15'", "Penalty Miss 88'", "Injury to Star Player"]
   }}
 }}
-
-CONSTRAINTS:
-- Every field must be present. If you cannot find a value, set it to null.
-- Do NOT invent players, events or stats. If not confirmed, leave null.
-- Do NOT include ``` or any markdown formatting.
 """
 
+        # FIX: Usando nome de modelo mais estável e temperatura baixa em vez de response_mime_type
         response = self.client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash", 
             contents=prompt,
             config=GenerateContentConfig(
                 tools=[Tool(google_search=GoogleSearch())],
-                temperature=0.2
+                temperature=0.1 
             )
         )
 
         try:
             return self._parse_response_text(response.text)
-        except json.JSONDecodeError as e:
+        except Exception as e:
             logger.error(f"❌ JSON decode error: {e} — response was: {response.text}")
             return None
 
+    def run_reality_check(self, fixture_id):
+        # 1. Obter stats da BD
+        db_stats = self._get_internal_stats(fixture_id)
+        if not db_stats:
+            logger.error(f"Fixture {fixture_id} not found in DB.")
+            return None
+        
+        # 2. Chamar o Auditor (AI + Search)
+        result = self.fetch_ground_truth(
+            db_stats['home_team'],
+            db_stats['away_team'],
+            db_stats['date'],
+            db_stats=db_stats
+        )
+        
+        # 3. Salvar o resultado se existir
+        if result:
+            self._save_truth(fixture_id, result)
+            return result
+        return None
 
     def close(self):
         if self.conn:

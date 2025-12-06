@@ -1,67 +1,56 @@
-"""
-Clarity Engine - Motor de Análise de Futebol
-Ponto de entrada para executar análises (single match ou batch).
-"""
-
-import sys
+import argparse
 from src.jobs.batch_runner import BatchRunner
 
 
 def main():
-    """
-    Modos de execução:
-    - python main.py                      -> Teste single match prediction
-    - python main.py --batch              -> Batch de 5 previsões pendentes
-    - python main.py --truth              -> Batch de 5 realidades pendentes (Google Search)
-    - python main.py --truth-single <id>  -> Realidade para um jogo específico
-    """
+    parser = argparse.ArgumentParser(description="Clarity Engine CLI")
+    
+    # Argumentos
+    parser.add_argument("--test", type=str, help="ID do jogo para teste single")
+    parser.add_argument("--truth-single", type=str, help="ID do jogo para verdade single")
+    parser.add_argument("--batch", action="store_true", help="Corre batch de pendentes (default 5)")
+    parser.add_argument("--truth", action="store_true", help="Corre batch de verdade pendentes")
+    
+    # Novos Argumentos para Rondas
+    parser.add_argument("--round", type=int, help="Número da ronda (Gameweek) para processar")
+    parser.add_argument("--mode", choices=["predict", "truth", "both"], default="both", help="Modo para a ronda: predict, truth ou both")
+    parser.add_argument("--prompt", type=str, default="hybrid", help="Versão do prompt (hybrid/contrarian)")
+
+    args = parser.parse_args()
     runner = BatchRunner()
+
+    print(f"--- CLARITY ENGINE ({args.prompt}) ---")
+
+    # 1. Single Test Prediction
+    if args.test:
+        runner.run_specific_match(args.test, prompt_version=args.prompt)
     
-    # Configuração da Execução
-    PROMPT_VERSION = "hybrid"  # ou "contrarian"
-    
-    # ID para testes rápidos (Hardcoded)
-    TEST_MATCH_ID = "2025-12-03_Arsenal_Brentford"
-    
-    print(f"--- CLARITY ENGINE: EXECUÇÃO ({PROMPT_VERSION}) ---\n")
-    
-    # Lógica de Argumentos CLI
-    if len(sys.argv) > 1:
-        command = sys.argv[1]
+    # 2. Single Truth Check
+    elif args.truth_single:
+        runner.run_specific_reality_check(args.truth_single)
+
+    # 3. Processar por RONDA (O teu novo workflow)
+    elif args.round:
+        r = args.round
+        if args.mode in ["predict", "both"]:
+            runner.run_round_predictions(r, prompt_version=args.prompt)
         
-        if command == "--batch":
-            # Modo Batch Previsão
-            print("Modo: PREDICTION BATCH (5 jogos pendentes)")
-            print("=" * 50)
-            runner.run_next_pending_batch(limit=5, prompt_version=PROMPT_VERSION, force=False)
-            
-        elif command == "--truth":
-            # Modo Batch Verdade
-            print("Modo: TRUTH BATCH (Google Search Grounding)")
-            print("=" * 50)
-            runner.run_truth_batch(limit=5)
-            
-        elif command == "--truth-single" and len(sys.argv) > 2:
-            # Modo Single Verdade
-            fx_id = sys.argv[2]
-            print(f"Modo: SINGLE TRUTH CHECK ({fx_id})")
-            print("=" * 50)
-            runner.run_specific_reality_check(fx_id)
-            
-        elif command == "--test" and len(sys.argv) > 2:
-             # Modo Single Previsão (com ID customizado)
-            fx_id = sys.argv[2]
-            print(f"Modo: SINGLE PREDICTION ({fx_id})")
-            print("=" * 50)
-            runner.run_specific_match(fx_id, prompt_version=PROMPT_VERSION, force=False)
-            
+        if args.mode in ["truth", "both"]:
+            runner.run_round_truth(r)
+
+    # 4. Batches Genéricos (Legado)
+    elif args.batch:
+        runner.run_next_pending_batch(limit=5, prompt_version=args.prompt)
+    elif args.truth:
+        runner.run_truth_batch(limit=5)
+    
     else:
-        # Modo Default (Teste Hardcoded)
-        print("Modo: SINGLE MATCH TEST (Default)")
-        print("=" * 50)
-        print(f"Fixture: {TEST_MATCH_ID}")
-        print()
-        runner.run_specific_match(TEST_MATCH_ID, prompt_version=PROMPT_VERSION, force=False)
+        print("⚠️  Nenhum argumento válido fornecido.")
+        print("Exemplos:")
+        print("  python main.py --round 14 --mode predict")
+        print("  python main.py --round 14 --mode truth")
+        print("  python main.py --round 14 --mode both")
+        print("  python main.py --test <fixture_id>")
 
 
 if __name__ == "__main__":
