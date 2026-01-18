@@ -75,10 +75,18 @@ Only update AGENTS.md if you have **genuinely reusable knowledge** that would he
 
 ## Quality Requirements
 
-- ALL commits must pass your project's quality checks (typecheck, lint, test)
-- Do NOT commit broken code
+- TRY to run quality checks (typecheck, lint, test)
+- If quality checks FAIL due to environment issues (missing pytest, PYTHONPATH problems):
+  - Document the issue in progress.txt
+  - Commit your work anyway with a note in the commit message
+  - Do NOT get stuck in a loop trying to fix environment issues
+- If quality checks FAIL due to actual code errors:
+  - Fix the errors
+  - Re-run checks until they pass
 - Keep changes focused and minimal
 - Follow existing code patterns
+
+**Important:** Fixing related files to make typecheck pass is OK and expected, not scope creep.
 
 ## Browser Testing (Required for Frontend Stories)
 
