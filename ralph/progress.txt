@@ -9,6 +9,16 @@ Started: 2026-01-18
 - **IMPORTANT: Never create application code under `ralph/` - only orchestration files (PRD, progress, prompts).**
 
 ## Log
+## 2026-01-18 18:02 - US-006
+Session Info: Model $MODEL running on opencode
+- Implemented `scripts/run_validation_suite.py` to generate `validation_report.json` and `validation_report.md` from DB data with prompt filtering, betting metrics, and baselines via the shared validation engine.
+- Files changed: `scripts/run_validation_suite.py`, `ralph/prd.json`, `ralph/progress.txt`.
+- **Learnings for future iterations:**
+  - Patterns discovered: Validation suite scripts follow the `PROJECT_ROOT` + `src` path injection pattern and should reuse `src/validation` utilities for report formatting and metrics.
+  - Gotchas encountered: Tests fail during collection because `src` is not on PYTHONPATH (`ModuleNotFoundError: No module named 'src'`).
+  - Useful context: `scripts/run_validation_suite.py` pulls analysis reports + evaluations + match_reality, then writes both JSON and markdown leaderboard outputs at repo root.
+- Thread: N/A
+---
 ## 2026-01-18 06:20 - US-004
 Session Info: Model $MODEL running on opencode
 - Verified betting metrics implementation covers ROI, win rate, avg odds, and drawdown per prompt version.
