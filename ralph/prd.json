@@ -32,21 +32,21 @@
         "passes": true,
         "notes": ""
       },
-      {
-        "id": "US-003",
-        "title": "Standardize 'action' extraction from analysis_reports for backtesting",
-        "description": "As the validation suite, I need to turn each analysis report into a consistent action object so ROI and accuracy can be measured deterministically.",
-        "acceptanceCriteria": [
-          "Implement src/validation/action_extractor.py that parses analysis_reports.full_json into a normalized action object",
-          "Supported outputs: NO_ACTION, AVOID_PUBLIC_SIDE, BET_1X2 (HOME|DRAW|AWAY) with referenced odds key",
-          "If report lacks a parseable action, extractor returns NO_ACTION (fails safe)",
-          "Unit tests cover at least 10 parsing cases across existing prompt versions",
-          "Typecheck/tests pass"
-        ],
-        "priority": 3,
-        "passes": false,
-        "notes": ""
-      },
+    {
+      "id": "US-003",
+      "title": "Standardize 'action' extraction from analysis_reports for backtesting",
+      "description": "As the validation suite, I need to turn each analysis report into a consistent action object so ROI and accuracy can be measured deterministically.",
+      "acceptanceCriteria": [
+        "Implement src/validation/action_extractor.py that parses analysis_reports.full_json into a normalized action object",
+        "Supported outputs: NO_ACTION, AVOID_PUBLIC_SIDE, BET_1X2 (HOME|DRAW|AWAY) with referenced odds key",
+        "If report lacks a parseable action, extractor returns NO_ACTION (fails safe)",
+        "Unit tests cover at least 10 parsing cases across existing prompt versions",
+        "Typecheck/tests pass"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
       {
         "id": "US-004",
         "title": "Compute ROI, drawdown, and coverage metrics per prompt_version",

@@ -40,3 +40,14 @@ Session Info: Model $MODEL running on opencode
   - Useful context: Use `scripts/import_odds_csv.py` for manual odds loads; rows are skipped with warnings if invalid.
 - Thread: N/A
 ---
+## 2026-01-18 02:51 - US-003
+Session Info: Model $MODEL running on opencode
+- Implemented action extractor to normalize betting recommendations into NO_ACTION, AVOID_PUBLIC_SIDE, or BET_1X2 with selection keys.
+- Added unit tests covering 12 parsing cases including phrases, draw/no-bet, and team-name mentions.
+- Files changed: `ralph/validation/action_extractor.py`, `ralph/validation/__init__.py`, `ralph/test_action_extractor.py`, `ralph/prd.json`, `ralph/progress.txt`.
+- **Learnings for future iterations:**
+  - Patterns discovered: Action extraction uses `evidence_chain.market_verdict` first with fallbacks to top-level keys.
+  - Gotchas encountered: Verdicts referencing both teams are treated as NO_ACTION to avoid ambiguity.
+  - Useful context: `Action` includes `market_key="1X2"` and `selection_key` for odds lookup.
+- Thread: N/A
+---
