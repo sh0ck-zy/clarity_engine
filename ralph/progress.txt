@@ -3,8 +3,10 @@ Started: 2026-01-18
 
 ## Codebase Patterns
 - Ralph agent artifacts live under `ralph/` (prd.json and progress.txt).
-- Validation code lives under `ralph/validation` and uses dataclasses for report schema.
+- **Validation code lives under `src/validation/`** (NOT ralph/validation!) and uses dataclasses for report schema.
+- **Tests live under `tests/`** (NOT ralph/test_*.py!)
 - Database schema lives in `src/database/schema.sql`; scripts follow the `PROJECT_ROOT` + `src` path injection pattern.
+- **IMPORTANT: Never create application code under `ralph/` - only orchestration files (PRD, progress, prompts).**
 
 ## Log
 ## 2026-01-18 06:20 - US-004
@@ -73,5 +75,30 @@ Session Info: Model $MODEL running on opencode
   - Patterns discovered: Baselines are computed once in `validation/engine.py` and attached to both `ValidationReport` and each `PromptVersionReport`.
   - Gotchas encountered: Pytest is missing in the environment; install dependencies before running tests.
   - Useful context: Bookmaker baseline uses lowest-odds 1X2 selection per fixture with available outcomes.
+- Thread: N/A
+---
+## 2026-01-18 07:20 - US-005
+Session Info: Model $MODEL running on opencode
+- Marked US-005 as complete in `ralph/prd.json`.
+- Tests still cannot run locally because pytest is missing.
+- Files changed: `ralph/prd.json`, `ralph/progress.txt`.
+- **Learnings for future iterations:**
+  - Patterns discovered: Validation baseline details live in `ralph/validation/engine.py` and `ralph/validation/report_schema.py`.
+  - Gotchas encountered: Pytest is missing in the environment; install dependencies before running tests.
+  - Useful context: Baselines are attached to both the report and each prompt version report.
+- Thread: N/A
+---
+## 2026-01-18 14:20 - CORRECTION
+Session Info: Manual fix by user + Claude Code
+- **CRITICAL FIX**: Moved all validation code from `ralph/` to correct locations
+- Moved `ralph/validation/*` → `src/validation/`
+- Moved `ralph/test_*.py` → `tests/`
+- Fixed all imports to use `src.validation`
+- Files changed: Deleted from ralph/, created in src/validation/ and tests/
+- **Learnings for future iterations:**
+  - **NEVER create application code in `ralph/`** - ralph/ is ONLY for orchestration (prd.json, progress.txt, prompts)
+  - Application code goes in `src/`, tests go in `tests/`
+  - Always double-check the PRD acceptance criteria for exact file paths
+  - Gotcha: Ralph misinterpreted "ralph" in the prompt as the target directory
 - Thread: N/A
 ---
