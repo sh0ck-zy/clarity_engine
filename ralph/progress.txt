@@ -7,6 +7,17 @@ Started: 2026-01-18
 - Database schema lives in `src/database/schema.sql`; scripts follow the `PROJECT_ROOT` + `src` path injection pattern.
 
 ## Log
+## 2026-01-18 06:20 - US-004
+Session Info: Model $MODEL running on opencode
+- Verified betting metrics implementation covers ROI, win rate, avg odds, and drawdown per prompt version.
+- Unable to run tests; pytest is not installed in the current environment.
+- Files changed: `ralph/prd.json`, `ralph/progress.txt`.
+- **Learnings for future iterations:**
+  - Patterns discovered: Validation betting metrics are computed in `ralph/validation/engine.py` using actions, outcomes, and odds snapshots.
+  - Gotchas encountered: Pytest is missing in the environment; install dependencies before running tests.
+  - Useful context: Actions, outcomes, and odds snapshots must align by index for ROI calculations.
+- Thread: N/A
+---
 ## 2026-01-18 02:08 - US-001
 Session Info: Model $MODEL running on opencode
 - Created `main.py` with the Ralph banner output.
@@ -49,5 +60,18 @@ Session Info: Model $MODEL running on opencode
   - Patterns discovered: Action extraction uses `evidence_chain.market_verdict` first with fallbacks to top-level keys.
   - Gotchas encountered: Verdicts referencing both teams are treated as NO_ACTION to avoid ambiguity.
   - Useful context: `Action` includes `market_key="1X2"` and `selection_key` for odds lookup.
+- Thread: N/A
+---
+## 2026-01-18 07:10 - US-005
+Session Info: Model $MODEL running on opencode
+- Implemented outcome baselines (random, majority class) and bookmaker baselines with ROI in validation engine.
+- Extended validation report schema to include baselines per prompt version and on the report.
+- Updated validation tests for baseline coverage.
+- Tests failed to run because pytest is not installed in the environment.
+- Files changed: `ralph/validation/engine.py`, `ralph/validation/report_schema.py`, `ralph/test_validation_engine.py`.
+- **Learnings for future iterations:**
+  - Patterns discovered: Baselines are computed once in `validation/engine.py` and attached to both `ValidationReport` and each `PromptVersionReport`.
+  - Gotchas encountered: Pytest is missing in the environment; install dependencies before running tests.
+  - Useful context: Bookmaker baseline uses lowest-odds 1X2 selection per fixture with available outcomes.
 - Thread: N/A
 ---

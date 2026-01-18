@@ -48,18 +48,18 @@
       "notes": ""
     },
       {
-        "id": "US-004",
-        "title": "Compute ROI, drawdown, and coverage metrics per prompt_version",
-        "description": "As the founder, I need to know if any version is profitable (or at least not terrible) and how often it actually produces bets.",
-        "acceptanceCriteria": [
-          "Extend ValidationEngine to compute betting_metrics per prompt_version: total_actions, total_bets, bet_rate, avg_odds, win_rate, ROI, max_drawdown",
-          "ROI uses imported odds_snapshots + actual results from fixtures/match_reality",
-          "If odds are missing for a bet, that bet is excluded and counted as 'unpriced_bet' in the report",
-          "Output included in validation_report.json under betting_metrics",
-          "Typecheck/tests pass"
-        ],
-        "priority": 4,
-        "passes": false,
+      "id": "US-004",
+      "title": "Compute ROI, drawdown, and coverage metrics per prompt_version",
+      "description": "As the founder, I need to know if any version is profitable (or at least not terrible) and how often it actually produces bets.",
+      "acceptanceCriteria": [
+        "Extend ValidationEngine to compute betting_metrics per prompt_version: total_actions, total_bets, bet_rate, avg_odds, win_rate, ROI, max_drawdown",
+        "ROI uses imported odds_snapshots + actual results from fixtures/match_reality",
+        "If odds are missing for a bet, that bet is excluded and counted as 'unpriced_bet' in the report",
+        "Output included in validation_report.json under betting_metrics",
+        "Typecheck/tests pass"
+      ],
+      "priority": 4,
+      "passes": true,
         "notes": ""
       },
       {
