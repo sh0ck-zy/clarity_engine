@@ -28,6 +28,11 @@ class OddsImportError(Exception):
     pass
 
 
+class TimeTravelViolationError(OddsImportError):
+    """Raised when odds are captured after the fixture date (time-travel violation)."""
+    pass
+
+
 def parse_timestamp(value: str) -> datetime:
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
         try:
@@ -68,6 +73,31 @@ def normalize_kickoff(kickoff: datetime) -> datetime:
     return datetime.combine(kickoff, datetime.min.time())
 
 
+def validate_row_time_travel(row: Dict[str, str], fixture_dates: Dict[str, datetime]) -> None:
+    """
+    Validate that odds were captured BEFORE the fixture kickoff.
+
+    Raises TimeTravelViolationError if odds captured_at >= fixture date.
+    This is critical - using future data makes all validation worthless.
+    """
+    fixture_id = row["fixture_id"]
+    captured_at = parse_timestamp(row["captured_at"])
+
+    if fixture_id not in fixture_dates:
+        raise OddsImportError(f"Unknown fixture: {fixture_id}")
+
+    fixture_date = normalize_kickoff(fixture_dates[fixture_id])
+
+    # Critical check: odds must be captured BEFORE kickoff
+    if captured_at >= fixture_date:
+        raise TimeTravelViolationError(
+            f"TIME TRAVEL VIOLATION: Odds for {fixture_id} were captured at {captured_at} "
+            f"but fixture kickoff is {fixture_date}. "
+            f"Odds MUST be captured BEFORE the match starts! "
+            f"This makes all validation results worthless."
+        )
+
+
 def parse_decimal(value: str) -> float:
     try:
         return float(value)
@@ -102,20 +132,16 @@ def import_odds(csv_path: Path, default_source: Optional[str] = None) -> None:
         rejected = 0
 
         for row in rows:
-            fixture_id = row.get("fixture_id")
-            kickoff = fixture_dates.get(fixture_id or "")
-            if kickoff is None:
-                print(f"⚠️  Fixture not found for fixture_id={fixture_id}. Skipping row.")
+            # Validate time-travel correctness
+            try:
+                validate_row_time_travel(row, fixture_dates)
+            except TimeTravelViolationError as e:
+                print(f"❌ TIME TRAVEL VIOLATION: {e}")
+                print(f"   Skipping row to prevent validation contamination.")
                 rejected += 1
                 continue
-
-            captured_at = parse_timestamp(row["captured_at"])
-            kickoff_at = normalize_kickoff(kickoff)
-            if captured_at >= kickoff_at:
-                print(
-                    "⚠️  Odds captured after kickoff for "
-                    f"fixture_id={fixture_id} captured_at={captured_at} kickoff={kickoff}. Skipping row."
-                )
+            except OddsImportError as e:
+                print(f"⚠️  Row validation error: {e}. Skipping.")
                 rejected += 1
                 continue
 

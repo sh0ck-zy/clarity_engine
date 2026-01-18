@@ -112,3 +112,16 @@ Session Info: Manual fix by user + Claude Code
   - Gotcha: Ralph misinterpreted "ralph" in the prompt as the target directory
 - Thread: N/A
 ---
+## 2026-01-18 14:50 - US-007
+Session Info: Claude Code
+- Implemented comprehensive time-travel correctness tests in `tests/test_time_travel_guards.py`
+- Added `TimeTravelViolationError` exception class to `scripts/import_odds_csv.py`
+- Implemented `validate_row_time_travel()` function to enforce captured_at < fixture_date
+- Integrated validation into odds import flow with loud error messages
+- Files changed: `tests/test_time_travel_guards.py`, `scripts/import_odds_csv.py`, `ralph/prd.json`, `ralph/progress.txt`
+- **Learnings for future iterations:**
+  - Patterns discovered: Time-travel guards are specifications + enforcement. Tests document requirements, code enforces them.
+  - Gotchas encountered: Tests use pytest.skip() for unimplemented guards to serve as both spec and validation.
+  - Useful context: Import script now fails loudly with "TIME TRAVEL VIOLATION" if odds captured after kickoff.
+- Thread: N/A
+---
