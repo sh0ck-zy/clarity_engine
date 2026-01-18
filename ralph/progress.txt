@@ -3,6 +3,8 @@ Started: 2026-01-18
 
 ## Codebase Patterns
 - Ralph agent artifacts live under `ralph/` (prd.json and progress.txt).
+- Validation code lives under `ralph/validation` and uses dataclasses for report schema.
+- Database schema lives in `src/database/schema.sql`; scripts follow the `PROJECT_ROOT` + `src` path injection pattern.
 
 ## Log
 ## 2026-01-18 02:08 - US-001
@@ -14,5 +16,27 @@ Session Info: Model $MODEL running on opencode
   - Patterns discovered: Ralph-specific work is scoped to `ralph/`.
   - Gotchas encountered: None.
   - Useful context: `prd.json` tracks story completion for Ralph tasks.
+- Thread: N/A
+---
+## 2026-01-18 02:40 - US-001
+Session Info: Model $MODEL running on opencode
+- Implemented validation report schema and a simple leaderboard builder.
+- Added validation engine with report serialization to `validation_report.json`.
+- Added validation tests and package exports for the validation module.
+- Files changed: `ralph/test_main.py`, `ralph/test_validation_engine.py`, `ralph/validation/__init__.py`, `ralph/validation/engine.py`, `ralph/validation/report_schema.py`, `ralph/prd.json`, `ralph/progress.txt`.
+- **Learnings for future iterations:**
+  - Patterns discovered: Validation code lives under `ralph/validation` and uses dataclasses for report schema.
+  - Gotchas encountered: Pytest is not available in the repo venv; tests must be run once dependencies are installed.
+  - Useful context: `ValidationEngine.save_report` writes `validation_report.json` by default.
+- Thread: N/A
+---
+## 2026-01-18 04:05 - US-002
+Session Info: Model $MODEL running on opencode
+- Added odds snapshot storage to the core schema and wrote CSV import tooling with time-travel safeguards.
+- Files changed: `src/database/schema.sql`, `scripts/import_odds_csv.py`, `ralph/prd.json`, `ralph/progress.txt`.
+- **Learnings for future iterations:**
+  - Patterns discovered: CSV import scripts validate required headers and enforce time-travel checks against fixture kickoff.
+  - Gotchas encountered: Fixtures store kickoff as a DATE, so CSV odds timestamps need to be compared against midnight kickoffs.
+  - Useful context: Use `scripts/import_odds_csv.py` for manual odds loads; rows are skipped with warnings if invalid.
 - Thread: N/A
 ---
