@@ -1,0 +1,18 @@
+# Ralph Progress Log
+Started: 2026-01-18
+
+## Codebase Patterns
+- Ralph agent artifacts live under `ralph/` (prd.json and progress.txt).
+
+## Log
+## 2026-01-18 02:08 - US-001
+Session Info: Model $MODEL running on opencode
+- Created `main.py` with the Ralph banner output.
+- Added an empty `requirements.txt`.
+- Files changed: `ralph/main.py`, `ralph/requirements.txt`, `ralph/prd.json`, `ralph/progress.txt`.
+- **Learnings for future iterations:**
+  - Patterns discovered: Ralph-specific work is scoped to `ralph/`.
+  - Gotchas encountered: None.
+  - Useful context: `prd.json` tracks story completion for Ralph tasks.
+- Thread: N/A
+---

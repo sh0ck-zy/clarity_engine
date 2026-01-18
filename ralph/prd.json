@@ -1,0 +1,27 @@
+{
+    "branchName": "ralph/feature-test",
+    "userStories": [
+      {
+        "id": "US-001",
+        "title": "Setup Project",
+        "acceptanceCriteria": [
+          "Create a main.py file that prints 'Ralph is alive'",
+          "Create a requirements.txt file (empty is fine)"
+        ],
+        "priority": 1,
+        "passes": true
+      },
+
+      {
+        "id": "US-003",
+        "title": "Add Test",
+        "acceptanceCriteria": [
+          "Create test_main.py",
+          "Add a simple assertion test for the fib function",
+          "Run the test to verify it passes"
+        ],
+        "priority": 3,
+        "passes": false
+      }
+    ]
+  }
