@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS lineup_strength_metrics;
 DROP TABLE IF EXISTS injury_impact_metrics;
 DROP TABLE IF EXISTS player_impact_metrics;
 DROP TABLE IF EXISTS player_market_values;
+DROP TABLE IF EXISTS player_injuries_historical;
 DROP TABLE IF EXISTS player_season_stats;
 DROP TABLE IF EXISTS player_match_stats;
 DROP TABLE IF EXISTS team_match_stats;
@@ -191,6 +192,20 @@ CREATE TABLE IF NOT EXISTS player_market_values (
     PRIMARY KEY (player_id, valuation_date)
 );
 
+CREATE TABLE IF NOT EXISTS player_injuries_historical (
+    player_id INT NOT NULL,
+    season TEXT,
+    injury_reason TEXT,
+    from_date DATE NOT NULL,
+    end_date DATE,
+    days_missed INT,
+    games_missed INT,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (player_id, from_date, injury_reason)
+);
+
 CREATE TABLE IF NOT EXISTS player_impact_metrics (
     player_id INT NOT NULL,
     season INT NOT NULL,
@@ -281,6 +296,7 @@ CREATE INDEX IF NOT EXISTS idx_player_season_stats_player ON player_season_stats
 CREATE INDEX IF NOT EXISTS idx_player_season_stats_team ON player_season_stats(team_id);
 CREATE INDEX IF NOT EXISTS idx_player_season_stats_season_league ON player_season_stats(season, league_id);
 CREATE INDEX IF NOT EXISTS idx_player_market_values_player ON player_market_values(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_injuries_historical_player ON player_injuries_historical(player_id);
 CREATE INDEX IF NOT EXISTS idx_player_impact_metrics_player ON player_impact_metrics(player_id);
 CREATE INDEX IF NOT EXISTS idx_injury_impact_metrics_fixture ON injury_impact_metrics(fixture_id);
 CREATE INDEX IF NOT EXISTS idx_lineup_strength_metrics_fixture ON lineup_strength_metrics(fixture_id);
