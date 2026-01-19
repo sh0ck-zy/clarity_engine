@@ -30,3 +30,25 @@ Session Info: Model $MODEL running on OpenCode
   - Schema changes should be made in src/database/schema.sql and documented in docs/database-schema.md
   - scripts/init_db.py requires python-dotenv; python/pip may be blocked by PEP 668 without a venv
 ---
+
+## 2026-01-20 12:00 - DATA-002b
+Session Info: Model $MODEL running on OpenCode
+- Extended FBref scraper to cache player season stats and insert fixtures/team stats/player stats into the DB
+- Added stable ID mapping + flexible column parsing for FBref datasets
+- Files changed: scripts/scrape_fbref_historical.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - FBref player stats are available via soccerdata.FBref.read_player_season_stats
+  - The FBref cache uses JSON files under data/fbref_cache/<season> for schedule/team/player stats
+  - pytest currently fails in tests/test_time_travel_guards.py due to TimeTravelViolationError not matching the expected exception list
+---
+
+## 2026-01-20 15:20 - DATA-003
+Session Info: Model $MODEL running on OpenCode
+- Implemented Transfermarkt import script with download, fuzzy player matching, and DB insertion for market values + injuries
+- Added player_injuries_historical table and documented schema
+- Files changed: scripts/import_transfermarkt_dataset.py, src/database/schema.sql, docs/database-schema.md, requirements.txt, ralph/prd.json
+- **Learnings for future iterations:**
+  - Transfermarkt raw CSVs live under datalake/transfermarkt/raw and are fetched from the GitHub repo in scripts/import_transfermarkt_dataset.py
+  - FBref player IDs can be derived from cached player_stats.json using the same stable int logic as the scraper
+  - pytest still fails in tests/test_time_travel_guards.py due to TimeTravelViolationError mismatch (pre-existing)
+---
