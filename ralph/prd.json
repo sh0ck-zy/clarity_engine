@@ -1,108 +1,265 @@
 {
-    "project": "Clarity Engine",
-    "branchName": "ralph/validation-suite-v0",
-    "description": "Validation-only slice: add an end-to-end validation suite that (1) compares prompt versions, (2) measures narrative + outcome metrics, and (3) computes betting ROI from imported odds (manual CSV) for standardized actions. No product UI, no Telegram automation.",
-    "userStories": [
-      {
-        "id": "US-001",
-        "title": "Define a single Validation Report schema + prompt-version leaderboard",
-        "description": "As the founder, I need one canonical report that compares prompt versions and shows whether we are improving or wasting time.",
-        "acceptanceCriteria": [
-          "Create a JSON schema for validation output including: narrative metrics, outcome metrics (W/D/L), confidence calibration stats, and (if available) ROI metrics",
-          "ValidationEngine produces a leaderboard by prompt_version for a given season/league/round range",
-          "Report saved to disk as validation_report.json",
-          "Typecheck passes"
-        ],
-        "priority": 1,
-        "passes": true,
-        "notes": ""
-      },
-      {
-        "id": "US-002",
-        "title": "Add odds storage + manual import (CSV) for time-travel-safe ROI validation",
-        "description": "As the validation suite, I need pre-kickoff odds so I can compute ROI without building a live odds integration yet.",
-        "acceptanceCriteria": [
-          "Add table odds_snapshots: id, fixture_id, market_key, selection_key, odds_decimal, captured_at, source",
-          "Add script scripts/import_odds_csv.py that imports 1X2 odds from a CSV and maps each row to fixture_id",
-          "Import enforces captured_at < fixture kickoff time/date (time-travel safe); invalid rows are rejected with clear logs",
-          "Migration runs successfully",
-          "Typecheck passes"
-        ],
-        "priority": 2,
-        "passes": true,
-        "notes": ""
-      },
+  "project": "Clarity Engine - Data Infrastructure",
+  "branchName": "data/historical-backfill-v1",
+  "description": "Complete data infrastructure for ML training. Stories are broken down to avoid context rot within single Ralph iterations.",
+  "userStories": [
     {
-      "id": "US-003",
-      "title": "Standardize 'action' extraction from analysis_reports for backtesting",
-      "description": "As the validation suite, I need to turn each analysis report into a consistent action object so ROI and accuracy can be measured deterministically.",
+      "id": "DATA-001",
+      "title": "Database schema for historical match data",
+      "description": "Create PostgreSQL schema for all historical data with time-travel correctness.",
       "acceptanceCriteria": [
-        "Implement src/validation/action_extractor.py that parses analysis_reports.full_json into a normalized action object",
-        "Supported outputs: NO_ACTION, AVOID_PUBLIC_SIDE, BET_1X2 (HOME|DRAW|AWAY) with referenced odds key",
-        "If report lacks a parseable action, extractor returns NO_ACTION (fails safe)",
-        "Unit tests cover at least 10 parsing cases across existing prompt versions",
-        "Typecheck/tests pass"
+        "Create migration: fixtures_historical (fixture_id PK, league_id, season, round, date, venue, home_team_id, away_team_id, home_score, away_score, status)",
+        "Create migration: lineups_historical (fixture_id FK, team_id, formation, lineup_type, players JSONB)",
+        "Create migration: injuries_historical (fixture_id FK, player_id, injury_type, reason, expected_return, valid_at timestamp)",
+        "Create migration: team_match_stats, player_match_stats, player_season_stats",
+        "Create migration: odds_snapshots, match_outcomes, match_features",
+        "All tables include: data_source, ingested_at, updated_at columns",
+        "Add indexes on: fixture date, fixture_id, player_id, team_id, season+league",
+        "Migration runs successfully on local DB"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Foundation - must complete first. Keep schema simple, add columns later if needed. Could not run scripts/init_db.py because python-dotenv is missing and pip is blocked by PEP 668; schema updates made manually."
+    },
+    {
+      "id": "DATA-002a",
+      "title": "FBref scraper - fixtures and team stats",
+      "description": "Scrape EPL fixtures and team-level statistics from FBref using soccerdata.",
+      "acceptanceCriteria": [
+        "Implement scripts/scrape_fbref_historical.py",
+        "Use soccerdata library with FBref reader",
+        "Scrape EPL seasons 2021-2024 fixtures (schedule)",
+        "Scrape team season stats (xG, xGA, shots, possession, PPDA)",
+        "Rate limiting: 3-5 second delay between requests",
+        "Cache data locally to JSON before DB insert",
+        "Log progress clearly"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Implemented script with caching + rate limiting. Quality checks not run (pytest missing in environment)."
+    },
+    {
+      "id": "DATA-002b",
+      "title": "FBref scraper - player stats and DB insertion",
+      "description": "Extend FBref scraper for player stats and insert all data to DB.",
+      "acceptanceCriteria": [
+        "Add player season stats scraping to scripts/scrape_fbref_historical.py",
+        "Player metrics: xG, xA, shots, key passes, progressive passes/carries, tackles, interceptions",
+        "Insert fixtures to fixtures_historical table",
+        "Insert team stats to team_match_stats table",
+        "Insert player stats to player_season_stats table",
+        "Validation: Print fixtures_count, teams_count, players_count, completeness %"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": ""
+      "passes": false,
+      "notes": "Depends on DATA-002a. Retry logic already in place."
     },
-      {
-      "id": "US-004",
-      "title": "Compute ROI, drawdown, and coverage metrics per prompt_version",
-      "description": "As the founder, I need to know if any version is profitable (or at least not terrible) and how often it actually produces bets.",
+    {
+      "id": "DATA-003",
+      "title": "Transfermarkt dataset import (market values + injuries)",
+      "description": "Import pre-scraped Transfermarkt dataset for player values and injury history.",
       "acceptanceCriteria": [
-        "Extend ValidationEngine to compute betting_metrics per prompt_version: total_actions, total_bets, bet_rate, avg_odds, win_rate, ROI, max_drawdown",
-        "ROI uses imported odds_snapshots + actual results from fixtures/match_reality",
-        "If odds are missing for a bet, that bet is excluded and counted as 'unpriced_bet' in the report",
-        "Output included in validation_report.json under betting_metrics",
-        "Typecheck/tests pass"
+        "Implement scripts/import_transfermarkt_dataset.py",
+        "Download dataset from github.com/salimt/football-datasets",
+        "Import player_market_values.csv to player_market_values table",
+        "Import injury history to player_injuries_historical table",
+        "Fuzzy match player names to FBref IDs (using rapidfuzz)",
+        "Generate player_mapping_report.csv showing match rate",
+        "Target: >80% of EPL players matched"
       ],
       "priority": 4,
-      "passes": true,
-        "notes": ""
-      },
-      {
-        "id": "US-005",
-        "title": "Add baselines: coin-flip W/D/L and bookmaker-implied baseline (if odds exist)",
-        "description": "As the founder, I need baselines so we stop fooling ourselves about progress and know what 'good' means.",
-        "acceptanceCriteria": [
-          "Validation report includes outcome baselines: random baseline (W/D/L uniform) and majority-class baseline",
-          "If 1X2 odds exist, add bookmaker baseline accuracy (pick lowest-odds outcome) and bookmaker expected ROI (should be negative)",
-          "Baselines appear side-by-side with each prompt_version",
-          "Typecheck passes"
-        ],
-        "priority": 5,
-        "passes": true,
-        "notes": ""
-      },
-      {
-        "id": "US-006",
-        "title": "One command to run the suite across a round range (reproducible)",
-        "description": "As the founder, I need one CLI command that runs everything and outputs a report I can trust and compare over time.",
-        "acceptanceCriteria": [
-          "Add scripts/run_validation_suite.py --season --league --from-round --to-round --prompt-version (optional) that runs validation end-to-end",
-          "Command outputs: validation_report.json and a short validation_report.md summary with the leaderboard",
-          "Run is deterministic given the same DB state (no new LLM calls unless explicitly requested)",
-          "Typecheck/tests pass"
-        ],
-        "priority": 6,
-        "passes": true,
-        "notes": ""
-      },
-      {
-        "id": "US-007",
-        "title": "Guardrails: time-travel correctness tests for all new validation computations",
-        "description": "As the system, I must guarantee we never accidentally use future data when validating, otherwise all results are worthless.",
-        "acceptanceCriteria": [
-          "Add tests that assert: odds captured_at < fixture date, context features only use matches before fixture date, and validation never reads post-match fields when generating actions",
-          "Validation fails loudly with an explicit error if any time-travel violation is detected",
-          "Typecheck/tests pass"
-        ],
-        "priority": 7,
-        "passes": true,
-        "notes": "Comprehensive time-travel guards added with test suite"
-      }
-    ]
-  }
-  
+      "passes": false,
+      "notes": "Pre-scraped data - no scraping needed. Name matching is the challenge."
+    },
+    {
+      "id": "DATA-004",
+      "title": "Football-Data.co.uk odds download",
+      "description": "Download historical closing odds from Football-Data.co.uk CSV files.",
+      "acceptanceCriteria": [
+        "Implement scripts/download_odds_historical.py",
+        "Download EPL CSVs: 2122, 2223, 2324, 2425 seasons",
+        "Parse: Date, HomeTeam, AwayTeam, FTHG, FTAG, FTR",
+        "Parse odds: B365H/D/A, PSH/D/A, WHH/D/A (all available bookmakers)",
+        "Map team names to team_ids (handle variations)",
+        "Insert to odds_snapshots with snapshot_timestamp = match_date - 1h",
+        "Validate: >95% fixtures have matching odds"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Direct CSV download - easy and reliable. No rate limiting needed."
+    },
+    {
+      "id": "DATA-005",
+      "title": "Player impact metrics calculator",
+      "description": "Calculate per-90 impact metrics and replacement value for each player.",
+      "acceptanceCriteria": [
+        "Implement src/data/player_impact.py with calculate_player_impact(player_id, season)",
+        "Calculate per-90: xg, xa, key_passes, progressive_passes, tackles, interceptions",
+        "Calculate offensive_impact = (xG + xA) per 90",
+        "Calculate defensive_impact = (tackles + interceptions) per 90",
+        "Find typical replacement: most-played backup in same position",
+        "Calculate replacement_delta for all metrics",
+        "Store in player_impact_metrics table",
+        "Unit test with Salah, Haaland, Van Dijk"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Depends on DATA-002b (player stats). Position-specific logic is key."
+    },
+    {
+      "id": "DATA-006a",
+      "title": "Feature engineering - rest days and schedule",
+      "description": "Calculate rest and schedule congestion features for each match.",
+      "acceptanceCriteria": [
+        "Implement src/data/feature_engineering.py",
+        "Function: derive_rest_features(fixture_id)",
+        "Calculate: home_rest_days, away_rest_days (days since last match)",
+        "Calculate: matches_in_last_7d, matches_in_last_14d for each team",
+        "Store in match_features table",
+        "All features use ONLY data before match (time-travel safe)",
+        "Script: python scripts/derive_match_features.py --season 2023"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "First feature engineering story. Simpler features first."
+    },
+    {
+      "id": "DATA-006b",
+      "title": "Feature engineering - form and H2H",
+      "description": "Calculate form (last 5 matches) and head-to-head features.",
+      "acceptanceCriteria": [
+        "Extend src/data/feature_engineering.py",
+        "Function: derive_form_features(fixture_id)",
+        "Form last 5: points, goals_for, goals_against, xg, xga, clean_sheets",
+        "H2H last 5: home_wins, draws, away_wins, avg_goals",
+        "League position: home_position_before, away_position_before, points",
+        "Store in match_features table",
+        "Validation: form uses exactly 5 previous matches"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Depends on DATA-006a. More complex time-travel logic."
+    },
+    {
+      "id": "DATA-007",
+      "title": "Lineup strength calculator",
+      "description": "Calculate starting XI quality metrics from lineups.",
+      "acceptanceCriteria": [
+        "Implement src/data/team_strength.py",
+        "Function: calculate_lineup_strength(fixture_id, team_id)",
+        "Calculate: avg_player_rating, total_market_value from XI",
+        "Calculate: offensive_strength (attackers xG/90 sum)",
+        "Calculate: defensive_strength (defenders tackles/interceptions sum)",
+        "Calculate: bench_strength (bench avg rating)",
+        "Store in lineup_strength_metrics table",
+        "Handle missing lineups: use recent typical XI"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Depends on DATA-003 (market values) and lineups data."
+    },
+    {
+      "id": "DATA-008",
+      "title": "Injury impact calculator",
+      "description": "Adjust team xG/xGA based on injured players.",
+      "acceptanceCriteria": [
+        "Implement src/data/injury_impact.py",
+        "Function: calculate_injury_impact(fixture_id)",
+        "Get injured players from injuries_historical (valid_at < fixture_date)",
+        "Sum offensive impact: missing attackers xg_loss",
+        "Sum defensive impact: missing defenders defensive_loss",
+        "Adjusted xG = baseline - offensive_impact",
+        "Adjusted xGA = baseline + defensive_impact",
+        "Store in injury_impact_metrics table"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Depends on DATA-005 (player impact). Diminishing returns for multiple injuries."
+    },
+    {
+      "id": "DATA-009",
+      "title": "Data completeness validator",
+      "description": "Validate data coverage and identify gaps.",
+      "acceptanceCriteria": [
+        "Implement scripts/validate_data_completeness.py",
+        "Check: fixtures coverage (all EPL 2021-2024?)",
+        "Check: team_match_stats coverage (%)",
+        "Check: lineups coverage (%)",
+        "Check: player stats and market values coverage (%)",
+        "Check: odds coverage (%)",
+        "Generate data_completeness_report.json",
+        "CLI: --season 2023 --detailed"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Run after all ingestion complete. Reveals gaps to fix."
+    },
+    {
+      "id": "DATA-010",
+      "title": "Time-travel correctness tests",
+      "description": "Test suite to guarantee no future data leakage.",
+      "acceptanceCriteria": [
+        "Implement tests/test_time_travel_correctness.py",
+        "Test: injuries valid_at < fixture_date for all",
+        "Test: odds snapshot_timestamp < fixture_date",
+        "Test: form features use only prior matches",
+        "Test: no match_outcomes fields used in features",
+        "Tests fail loudly with clear messages",
+        "All tests pass"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "CRITICAL. Run in CI. One violation ruins training data."
+    },
+    {
+      "id": "DATA-012",
+      "title": "Backfill orchestrator script",
+      "description": "One command to run entire backfill pipeline.",
+      "acceptanceCriteria": [
+        "Implement scripts/backfill_all_historical_data.py",
+        "Stages: FBref → Transfermarkt → Odds → Features → Validation",
+        "CLI: --seasons 2021 2022 2023 2024",
+        "CLI: --skip-scraping, --validate-only flags",
+        "Progress tracking: print stage status",
+        "Resume capability: --resume from last stage",
+        "Final report: completeness, errors"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Convenience tool. Idempotent (safe to re-run)."
+    },
+    {
+      "id": "DATA-013",
+      "title": "ML dataset export (train/val/test)",
+      "description": "Export data to ML-ready format with temporal split.",
+      "acceptanceCriteria": [
+        "Implement scripts/export_ml_dataset.py",
+        "One row per fixture: features + labels",
+        "Labels: home_score, away_score, result, home_xg, away_xg",
+        "Temporal split: train (<2024-05-01), val (05-08), test (08+)",
+        "Export: CSV and parquet formats",
+        "Filter: exclude fixtures with >20% missing features",
+        "Output: clarity_engine_{train,val,test}.parquet"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Final step. No data leakage between splits."
+    },
+    {
+      "id": "DATA-014",
+      "title": "Real-time ingestion framework (stubs)",
+      "description": "Framework for future real-time data from paid APIs.",
+      "acceptanceCriteria": [
+        "Implement src/ingestion/realtime_ingestion.py",
+        "Abstract APIAdapter class with fetch_fixtures(), fetch_lineups(), fetch_odds()",
+        "Stub: APIFootballAdapter (placeholder, not functional)",
+        "Stub: OddsAPIAdapter (placeholder, not functional)",
+        "Config file for API keys and rate limits",
+        "Documentation: docs/realtime-ingestion.md"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "Stubs only - actual API integration later when we have keys."
+    }
+  ]
+}

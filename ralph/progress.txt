@@ -9,119 +9,24 @@ Started: 2026-01-18
 - **IMPORTANT: Never create application code under `ralph/` - only orchestration files (PRD, progress, prompts).**
 
 ## Log
-## 2026-01-18 18:02 - US-006
-Session Info: Model $MODEL running on opencode
-- Implemented `scripts/run_validation_suite.py` to generate `validation_report.json` and `validation_report.md` from DB data with prompt filtering, betting metrics, and baselines via the shared validation engine.
-- Files changed: `scripts/run_validation_suite.py`, `ralph/prd.json`, `ralph/progress.txt`.
+
+## 2026-01-19 - DATA-002a
+Session Info: Model $MODEL running on OpenCode
+- Implemented FBref historical scraper with caching and rate limiting
+- Cached fixtures schedules and team season stats (standard/shooting/possession/misc)
+- Files changed: scripts/scrape_fbref_historical.py, ralph/prd.json
 - **Learnings for future iterations:**
-  - Patterns discovered: Validation suite scripts follow the `PROJECT_ROOT` + `src` path injection pattern and should reuse `src/validation` utilities for report formatting and metrics.
-  - Gotchas encountered: Tests fail during collection because `src` is not on PYTHONPATH (`ModuleNotFoundError: No module named 'src'`).
-  - Useful context: `scripts/run_validation_suite.py` pulls analysis reports + evaluations + match_reality, then writes both JSON and markdown leaderboard outputs at repo root.
-- Thread: N/A
+  - soccerdata FBref schedule + team season stats are accessible via read_schedule and read_team_season_stats
+  - scripts should follow PROJECT_ROOT path injection pattern for src imports
+  - pytest not available in environment (python3 -m pytest fails: No module named pytest)
 ---
-## 2026-01-18 06:20 - US-004
-Session Info: Model $MODEL running on opencode
-- Verified betting metrics implementation covers ROI, win rate, avg odds, and drawdown per prompt version.
-- Unable to run tests; pytest is not installed in the current environment.
-- Files changed: `ralph/prd.json`, `ralph/progress.txt`.
+
+## 2026-01-19 - DATA-001
+Session Info: Model $MODEL running on OpenCode
+- Implemented historical data schema tables and indexes in src/database/schema.sql
+- Added schema documentation in docs/database-schema.md
+- Files changed: src/database/schema.sql, docs/database-schema.md, ralph/prd.json
 - **Learnings for future iterations:**
-  - Patterns discovered: Validation betting metrics are computed in `ralph/validation/engine.py` using actions, outcomes, and odds snapshots.
-  - Gotchas encountered: Pytest is missing in the environment; install dependencies before running tests.
-  - Useful context: Actions, outcomes, and odds snapshots must align by index for ROI calculations.
-- Thread: N/A
----
-## 2026-01-18 02:08 - US-001
-Session Info: Model $MODEL running on opencode
-- Created `main.py` with the Ralph banner output.
-- Added an empty `requirements.txt`.
-- Files changed: `ralph/main.py`, `ralph/requirements.txt`, `ralph/prd.json`, `ralph/progress.txt`.
-- **Learnings for future iterations:**
-  - Patterns discovered: Ralph-specific work is scoped to `ralph/`.
-  - Gotchas encountered: None.
-  - Useful context: `prd.json` tracks story completion for Ralph tasks.
-- Thread: N/A
----
-## 2026-01-18 02:40 - US-001
-Session Info: Model $MODEL running on opencode
-- Implemented validation report schema and a simple leaderboard builder.
-- Added validation engine with report serialization to `validation_report.json`.
-- Added validation tests and package exports for the validation module.
-- Files changed: `ralph/test_main.py`, `ralph/test_validation_engine.py`, `ralph/validation/__init__.py`, `ralph/validation/engine.py`, `ralph/validation/report_schema.py`, `ralph/prd.json`, `ralph/progress.txt`.
-- **Learnings for future iterations:**
-  - Patterns discovered: Validation code lives under `ralph/validation` and uses dataclasses for report schema.
-  - Gotchas encountered: Pytest is not available in the repo venv; tests must be run once dependencies are installed.
-  - Useful context: `ValidationEngine.save_report` writes `validation_report.json` by default.
-- Thread: N/A
----
-## 2026-01-18 04:05 - US-002
-Session Info: Model $MODEL running on opencode
-- Added odds snapshot storage to the core schema and wrote CSV import tooling with time-travel safeguards.
-- Files changed: `src/database/schema.sql`, `scripts/import_odds_csv.py`, `ralph/prd.json`, `ralph/progress.txt`.
-- **Learnings for future iterations:**
-  - Patterns discovered: CSV import scripts validate required headers and enforce time-travel checks against fixture kickoff.
-  - Gotchas encountered: Fixtures store kickoff as a DATE, so CSV odds timestamps need to be compared against midnight kickoffs.
-  - Useful context: Use `scripts/import_odds_csv.py` for manual odds loads; rows are skipped with warnings if invalid.
-- Thread: N/A
----
-## 2026-01-18 02:51 - US-003
-Session Info: Model $MODEL running on opencode
-- Implemented action extractor to normalize betting recommendations into NO_ACTION, AVOID_PUBLIC_SIDE, or BET_1X2 with selection keys.
-- Added unit tests covering 12 parsing cases including phrases, draw/no-bet, and team-name mentions.
-- Files changed: `ralph/validation/action_extractor.py`, `ralph/validation/__init__.py`, `ralph/test_action_extractor.py`, `ralph/prd.json`, `ralph/progress.txt`.
-- **Learnings for future iterations:**
-  - Patterns discovered: Action extraction uses `evidence_chain.market_verdict` first with fallbacks to top-level keys.
-  - Gotchas encountered: Verdicts referencing both teams are treated as NO_ACTION to avoid ambiguity.
-  - Useful context: `Action` includes `market_key="1X2"` and `selection_key` for odds lookup.
-- Thread: N/A
----
-## 2026-01-18 07:10 - US-005
-Session Info: Model $MODEL running on opencode
-- Implemented outcome baselines (random, majority class) and bookmaker baselines with ROI in validation engine.
-- Extended validation report schema to include baselines per prompt version and on the report.
-- Updated validation tests for baseline coverage.
-- Tests failed to run because pytest is not installed in the environment.
-- Files changed: `ralph/validation/engine.py`, `ralph/validation/report_schema.py`, `ralph/test_validation_engine.py`.
-- **Learnings for future iterations:**
-  - Patterns discovered: Baselines are computed once in `validation/engine.py` and attached to both `ValidationReport` and each `PromptVersionReport`.
-  - Gotchas encountered: Pytest is missing in the environment; install dependencies before running tests.
-  - Useful context: Bookmaker baseline uses lowest-odds 1X2 selection per fixture with available outcomes.
-- Thread: N/A
----
-## 2026-01-18 07:20 - US-005
-Session Info: Model $MODEL running on opencode
-- Marked US-005 as complete in `ralph/prd.json`.
-- Tests still cannot run locally because pytest is missing.
-- Files changed: `ralph/prd.json`, `ralph/progress.txt`.
-- **Learnings for future iterations:**
-  - Patterns discovered: Validation baseline details live in `ralph/validation/engine.py` and `ralph/validation/report_schema.py`.
-  - Gotchas encountered: Pytest is missing in the environment; install dependencies before running tests.
-  - Useful context: Baselines are attached to both the report and each prompt version report.
-- Thread: N/A
----
-## 2026-01-18 14:20 - CORRECTION
-Session Info: Manual fix by user + Claude Code
-- **CRITICAL FIX**: Moved all validation code from `ralph/` to correct locations
-- Moved `ralph/validation/*` → `src/validation/`
-- Moved `ralph/test_*.py` → `tests/`
-- Fixed all imports to use `src.validation`
-- Files changed: Deleted from ralph/, created in src/validation/ and tests/
-- **Learnings for future iterations:**
-  - **NEVER create application code in `ralph/`** - ralph/ is ONLY for orchestration (prd.json, progress.txt, prompts)
-  - Application code goes in `src/`, tests go in `tests/`
-  - Always double-check the PRD acceptance criteria for exact file paths
-  - Gotcha: Ralph misinterpreted "ralph" in the prompt as the target directory
-- Thread: N/A
----
-## 2026-01-18 14:50 - US-007
-Session Info: Claude Code
-- Implemented comprehensive time-travel correctness tests in `tests/test_time_travel_guards.py`
-- Added `TimeTravelViolationError` exception class to `scripts/import_odds_csv.py`
-- Implemented `validate_row_time_travel()` function to enforce captured_at < fixture_date
-- Integrated validation into odds import flow with loud error messages
-- Files changed: `tests/test_time_travel_guards.py`, `scripts/import_odds_csv.py`, `ralph/prd.json`, `ralph/progress.txt`
-- **Learnings for future iterations:**
-  - Patterns discovered: Time-travel guards are specifications + enforcement. Tests document requirements, code enforces them.
-  - Gotchas encountered: Tests use pytest.skip() for unimplemented guards to serve as both spec and validation.
-  - Useful context: Import script now fails loudly with "TIME TRAVEL VIOLATION" if odds captured after kickoff.
-- Thread: N/A
+  - Schema changes should be made in src/database/schema.sql and documented in docs/database-schema.md
+  - scripts/init_db.py requires python-dotenv; python/pip may be blocked by PEP 668 without a venv
 ---
