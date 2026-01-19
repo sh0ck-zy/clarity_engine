@@ -4,9 +4,21 @@ DROP TABLE IF EXISTS analysis_evaluations;
 DROP TABLE IF EXISTS match_reality;
 DROP TABLE IF EXISTS analysis_reports;
 DROP TABLE IF EXISTS market_odds;
-DROP TABLE IF EXISTS odds_snapshots;
 DROP TABLE IF EXISTS team_stats;
 DROP TABLE IF EXISTS fixtures;
+DROP TABLE IF EXISTS lineup_strength_metrics;
+DROP TABLE IF EXISTS injury_impact_metrics;
+DROP TABLE IF EXISTS player_impact_metrics;
+DROP TABLE IF EXISTS player_market_values;
+DROP TABLE IF EXISTS player_season_stats;
+DROP TABLE IF EXISTS player_match_stats;
+DROP TABLE IF EXISTS team_match_stats;
+DROP TABLE IF EXISTS injuries_historical;
+DROP TABLE IF EXISTS lineups_historical;
+DROP TABLE IF EXISTS match_features;
+DROP TABLE IF EXISTS match_outcomes;
+DROP TABLE IF EXISTS odds_snapshots;
+DROP TABLE IF EXISTS fixtures_historical;
 
 CREATE TABLE fixtures (
     id TEXT PRIMARY KEY,              -- ID: "2024-08-17_Arsenal_Wolves"
@@ -27,12 +39,12 @@ CREATE TABLE team_stats (
     fixture_id TEXT REFERENCES fixtures(id) ON DELETE CASCADE,
     team_name TEXT NOT NULL,
     is_home BOOLEAN NOT NULL,
-    xg DECIMAL(4,2),          
-    xga DECIMAL(4,2),         
-    ppda DECIMAL(4,1),        
-    field_tilt DECIMAL(4,1),  
-    raw_json JSONB,      
-    elo INT,                  -- Latest Elo before match     
+    xg DECIMAL(4,2),
+    xga DECIMAL(4,2),
+    ppda DECIMAL(4,1),
+    field_tilt DECIMAL(4,1),
+    raw_json JSONB,
+    elo INT,                  -- Latest Elo before match
     PRIMARY KEY (fixture_id, team_name)
 );
 
@@ -48,12 +60,15 @@ CREATE TABLE market_odds (
 
 CREATE TABLE odds_snapshots (
     id SERIAL PRIMARY KEY,
-    fixture_id TEXT REFERENCES fixtures(id) ON DELETE CASCADE,
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
     market_key TEXT NOT NULL,
     selection_key TEXT NOT NULL,
     odds_decimal DECIMAL(8,4) NOT NULL,
     captured_at TIMESTAMP NOT NULL,
-    source TEXT DEFAULT 'manual_csv'
+    source TEXT DEFAULT 'manual_csv',
+    data_source TEXT NOT NULL DEFAULT 'manual_csv',
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX idx_fixtures_date ON fixtures(date);
@@ -62,6 +77,215 @@ CREATE INDEX idx_odds_market ON odds_snapshots(market_key, selection_key);
 CREATE INDEX idx_odds_captured_at ON odds_snapshots(captured_at);
 CREATE INDEX idx_fixtures_league ON fixtures(league);
 CREATE INDEX idx_stats_team ON team_stats(team_name);
+
+-- Historical data tables (time-travel safe)
+CREATE TABLE IF NOT EXISTS fixtures_historical (
+    fixture_id TEXT PRIMARY KEY,
+    league_id INT,
+    season INT,
+    round TEXT,
+    date TIMESTAMP NOT NULL,
+    venue TEXT,
+    home_team_id INT NOT NULL,
+    away_team_id INT NOT NULL,
+    home_score INT,
+    away_score INT,
+    status TEXT,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lineups_historical (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    team_id INT NOT NULL,
+    formation TEXT,
+    lineup_type TEXT NOT NULL,
+    players JSONB NOT NULL,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id, team_id, lineup_type)
+);
+
+CREATE TABLE IF NOT EXISTS injuries_historical (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    player_id INT NOT NULL,
+    injury_type TEXT,
+    reason TEXT,
+    expected_return DATE,
+    valid_at TIMESTAMP NOT NULL,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id, player_id, valid_at)
+);
+
+CREATE TABLE IF NOT EXISTS team_match_stats (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    team_id INT NOT NULL,
+    is_home BOOLEAN NOT NULL,
+    season INT NOT NULL,
+    league_id INT NOT NULL,
+    xg DECIMAL(6,3),
+    xga DECIMAL(6,3),
+    shots INT,
+    possession DECIMAL(5,2),
+    ppda DECIMAL(6,3),
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id, team_id)
+);
+
+CREATE TABLE IF NOT EXISTS player_match_stats (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    team_id INT NOT NULL,
+    player_id INT NOT NULL,
+    season INT NOT NULL,
+    league_id INT NOT NULL,
+    minutes INT,
+    position TEXT,
+    xg DECIMAL(6,3),
+    xa DECIMAL(6,3),
+    shots INT,
+    key_passes INT,
+    progressive_passes INT,
+    progressive_carries INT,
+    tackles INT,
+    interceptions INT,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id, player_id)
+);
+
+CREATE TABLE IF NOT EXISTS player_season_stats (
+    player_id INT NOT NULL,
+    team_id INT NOT NULL,
+    season INT NOT NULL,
+    league_id INT NOT NULL,
+    minutes INT,
+    position TEXT,
+    xg DECIMAL(6,3),
+    xa DECIMAL(6,3),
+    shots INT,
+    key_passes INT,
+    progressive_passes INT,
+    progressive_carries INT,
+    tackles INT,
+    interceptions INT,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (player_id, season, league_id)
+);
+
+CREATE TABLE IF NOT EXISTS player_market_values (
+    player_id INT NOT NULL,
+    market_value_eur DECIMAL(12,2),
+    valuation_date DATE NOT NULL,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (player_id, valuation_date)
+);
+
+CREATE TABLE IF NOT EXISTS player_impact_metrics (
+    player_id INT NOT NULL,
+    season INT NOT NULL,
+    league_id INT NOT NULL,
+    minutes INT,
+    xg_per90 DECIMAL(7,3),
+    xa_per90 DECIMAL(7,3),
+    key_passes_per90 DECIMAL(7,3),
+    progressive_passes_per90 DECIMAL(7,3),
+    tackles_per90 DECIMAL(7,3),
+    interceptions_per90 DECIMAL(7,3),
+    offensive_impact DECIMAL(7,3),
+    defensive_impact DECIMAL(7,3),
+    replacement_player_id INT,
+    replacement_delta JSONB,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (player_id, season, league_id)
+);
+
+CREATE TABLE IF NOT EXISTS injury_impact_metrics (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    team_id INT NOT NULL,
+    offensive_impact DECIMAL(7,3),
+    defensive_impact DECIMAL(7,3),
+    adjusted_xg DECIMAL(7,3),
+    adjusted_xga DECIMAL(7,3),
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id, team_id)
+);
+
+CREATE TABLE IF NOT EXISTS lineup_strength_metrics (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    team_id INT NOT NULL,
+    avg_player_rating DECIMAL(6,3),
+    total_market_value DECIMAL(12,2),
+    offensive_strength DECIMAL(7,3),
+    defensive_strength DECIMAL(7,3),
+    bench_strength DECIMAL(7,3),
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id, team_id)
+);
+
+CREATE TABLE IF NOT EXISTS match_outcomes (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    home_score INT,
+    away_score INT,
+    home_xg DECIMAL(6,3),
+    away_xg DECIMAL(6,3),
+    result TEXT,
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id)
+);
+
+CREATE TABLE IF NOT EXISTS match_features (
+    fixture_id TEXT REFERENCES fixtures_historical(fixture_id) ON DELETE CASCADE,
+    season INT NOT NULL,
+    league_id INT NOT NULL,
+    feature_key TEXT NOT NULL,
+    feature_value DECIMAL(10,4),
+    computed_at TIMESTAMP DEFAULT NOW(),
+    data_source TEXT NOT NULL,
+    ingested_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (fixture_id, feature_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fixtures_historical_date ON fixtures_historical(date);
+CREATE INDEX IF NOT EXISTS idx_fixtures_historical_season_league ON fixtures_historical(season, league_id);
+CREATE INDEX IF NOT EXISTS idx_lineups_historical_fixture ON lineups_historical(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_lineups_historical_team ON lineups_historical(team_id);
+CREATE INDEX IF NOT EXISTS idx_injuries_historical_fixture ON injuries_historical(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_injuries_historical_player ON injuries_historical(player_id);
+CREATE INDEX IF NOT EXISTS idx_team_match_stats_fixture ON team_match_stats(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_team_match_stats_team ON team_match_stats(team_id);
+CREATE INDEX IF NOT EXISTS idx_team_match_stats_season_league ON team_match_stats(season, league_id);
+CREATE INDEX IF NOT EXISTS idx_player_match_stats_fixture ON player_match_stats(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_player_match_stats_player ON player_match_stats(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_match_stats_team ON player_match_stats(team_id);
+CREATE INDEX IF NOT EXISTS idx_player_season_stats_player ON player_season_stats(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_season_stats_team ON player_season_stats(team_id);
+CREATE INDEX IF NOT EXISTS idx_player_season_stats_season_league ON player_season_stats(season, league_id);
+CREATE INDEX IF NOT EXISTS idx_player_market_values_player ON player_market_values(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_impact_metrics_player ON player_impact_metrics(player_id);
+CREATE INDEX IF NOT EXISTS idx_injury_impact_metrics_fixture ON injury_impact_metrics(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_lineup_strength_metrics_fixture ON lineup_strength_metrics(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_match_features_fixture ON match_features(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_match_features_season_league ON match_features(season, league_id);
 
 -- 3b. ANALYSIS REPORTS (LLM Cache)
 CREATE TABLE analysis_reports (
