@@ -1,0 +1,18 @@
+{
+  "api_football": {
+    "api_key": "REPLACE_ME",
+    "base_url": "https://v3.football.api-sports.io",
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "burst": 10
+    }
+  },
+  "odds_api": {
+    "api_key": "REPLACE_ME",
+    "base_url": "https://api.the-odds-api.com",
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "burst": 10
+    }
+  }
+}
