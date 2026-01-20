@@ -102,3 +102,12 @@ Session Info: Model $MODEL running on OpenCode
   - lineups_historical stores per-team lineups with lineup_type and players JSON; fallback queries should join fixtures_historical for dates
   - player_market_values queries should use valuation_date <= fixture_date for pre-match snapshots
 ---
+
+## 2026-01-20 21:30 - DATA-008
+Session Info: Model $MODEL running on OpenCode
+- Implemented injury impact calculator with injury lookups before fixture dates and diminishing returns
+- Adjusted baseline xG/xGA per team and stored in injury_impact_metrics
+- Files changed: src/data/injury_impact.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - injury impact derivation uses injuries_historical joined to player_season_stats for team/position context
+---

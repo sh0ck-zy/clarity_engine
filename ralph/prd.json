@@ -173,8 +173,8 @@
         "Store in injury_impact_metrics table"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": "Depends on DATA-005 (player impact). Diminishing returns for multiple injuries."
+      "passes": true,
+      "notes": "Implemented injury impact calculator with injury lookups before fixture dates, diminishing returns, and baseline xG/xGA adjustments."
     },
     {
       "id": "DATA-009",
