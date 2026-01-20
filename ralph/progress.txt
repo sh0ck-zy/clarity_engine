@@ -92,3 +92,13 @@ Session Info: Model $MODEL running on OpenCode
   - Form and H2H queries should filter fixtures_historical with date < fixture_date and completed scores only
   - League positions can be derived from fixtures_historical by season/league before fixture_date
 ---
+
+## 2026-01-20 20:40 - DATA-007
+Session Info: Model $MODEL running on OpenCode
+- Implemented lineup strength calculator with starting XI/bench parsing and fallback to most recent lineup
+- Added market value aggregation plus offensive/defensive strength rollups from player impact/season stats
+- Files changed: src/data/team_strength.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - lineups_historical stores per-team lineups with lineup_type and players JSON; fallback queries should join fixtures_historical for dates
+  - player_market_values queries should use valuation_date <= fixture_date for pre-match snapshots
+---

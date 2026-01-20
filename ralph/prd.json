@@ -155,8 +155,8 @@
         "Handle missing lineups: use recent typical XI"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": "Depends on DATA-003 (market values) and lineups data."
+      "passes": true,
+      "notes": "Implemented lineup strength calculator with lineup fallback, ratings, market values, and per-90 strength aggregation."
     },
     {
       "id": "DATA-008",
