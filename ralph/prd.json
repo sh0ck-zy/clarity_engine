@@ -225,8 +225,8 @@
         "Final report: completeness, errors"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": "Convenience tool. Idempotent (safe to re-run)."
+      "passes": true,
+      "notes": "Added scripts/backfill_all_historical_data.py with staged pipeline, resume support, and per-season validation summaries. Tests not run per instructions."
     },
     {
       "id": "DATA-013",

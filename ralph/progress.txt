@@ -130,3 +130,12 @@ Session Info: Model $MODEL running on OpenCode
   - Time-travel correctness checks can be validated via DB joins against fixtures_historical when the DB is available
   - Feature engineering queries must enforce date < fixture_date to remain leakage-safe
 ---
+
+## 2026-01-20 23:40 - DATA-012
+Session Info: Model $MODEL running on OpenCode
+- Implemented a backfill orchestration script with staged execution, resume support, and validation summaries
+- Added CLI flags for season selection, skipping scraping, validation-only runs, and detailed reports
+- Files changed: scripts/backfill_all_historical_data.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - Backfill orchestration expects season start years but converts to FBref/Football-Data season codes internally
+---
