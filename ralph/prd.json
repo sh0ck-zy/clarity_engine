@@ -258,8 +258,8 @@
         "Documentation: docs/realtime-ingestion.md"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": "Stubs only - actual API integration later when we have keys."
+      "passes": true,
+      "notes": "Stub adapters, config file, and docs added; no functional API integration yet."
     }
   ]
 }

@@ -148,3 +148,12 @@ Session Info: Model $MODEL running on OpenCode
 - **Learnings for future iterations:**
   - Parquet export requires pyarrow or fastparquet in the runtime environment
 ---
+
+## 2026-01-21 00:35 - DATA-014
+Session Info: Model $MODEL running on OpenCode
+- Implemented real-time ingestion stubs with adapter interfaces and config loader
+- Added placeholder config for API keys/rate limits plus documentation
+- Files changed: src/ingestion/realtime_ingestion.py, config/realtime_ingestion.json, docs/realtime-ingestion.md, ralph/prd.json
+- **Learnings for future iterations:**
+  - Real-time ingestion configuration is stored in config/realtime_ingestion.json with placeholder keys
+---
