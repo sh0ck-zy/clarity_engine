@@ -120,8 +120,8 @@
         "Script: python scripts/derive_match_features.py --season 2023"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": "First feature engineering story. Simpler features first."
+      "passes": true,
+      "notes": "Implemented derive_rest_features with time-travel safe queries and script to backfill per-season rest features."
     },
     {
       "id": "DATA-006b",

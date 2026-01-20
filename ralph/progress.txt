@@ -8,6 +8,7 @@ Started: 2026-01-18
 - Database schema lives in `src/database/schema.sql`; scripts follow the `PROJECT_ROOT` + `src` path injection pattern.
 - **IMPORTANT: Never create application code under `ralph/` - only orchestration files (PRD, progress, prompts).**
 - Odds snapshots should use market_key `1X2` with selection_key `HOME`/`DRAW`/`AWAY` for validation lookups.
+- Match feature engineering writes to `match_features` using `feature_key` per metric and upserts on `(fixture_id, feature_key)`.
 
 ## Log
 
@@ -71,4 +72,13 @@ Session Info: Model $MODEL running on OpenCode
 - Files changed: src/data/player_impact.py, src/data/__init__.py, tests/test_player_impact.py, ralph/prd.json
 - **Learnings for future iterations:**
   - player_impact_metrics stores per-90 metrics plus replacement_delta JSON for downstream use
+---
+
+## 2026-01-20 18:35 - DATA-006a
+Session Info: Model $MODEL running on OpenCode
+- Implemented rest/schedule feature engineering with time-travel safe queries and match_features upserts
+- Added CLI script to backfill rest features per season
+- Files changed: src/data/feature_engineering.py, scripts/derive_match_features.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - Rest and congestion features should use fixtures_historical with date < fixture_date to avoid leakage
 ---
