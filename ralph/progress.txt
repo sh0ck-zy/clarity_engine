@@ -139,3 +139,12 @@ Session Info: Model $MODEL running on OpenCode
 - **Learnings for future iterations:**
   - Backfill orchestration expects season start years but converts to FBref/Football-Data season codes internally
 ---
+
+## 2026-01-20 23:55 - DATA-013
+Session Info: Model $MODEL running on OpenCode
+- Implemented ML dataset export script with temporal splits, feature pivoting, and missing-feature filtering
+- Exported CSV + Parquet outputs for train/val/test splits with configurable output directory
+- Files changed: scripts/export_ml_dataset.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - Parquet export requires pyarrow or fastparquet in the runtime environment
+---

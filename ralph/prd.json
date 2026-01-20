@@ -242,8 +242,8 @@
         "Output: clarity_engine_{train,val,test}.parquet"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": "Final step. No data leakage between splits."
+      "passes": true,
+      "notes": "Implemented export_ml_dataset script with CSV/Parquet splits; requires pyarrow or fastparquet for parquet export."
     },
     {
       "id": "DATA-014",
