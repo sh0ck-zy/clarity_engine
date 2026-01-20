@@ -137,8 +137,8 @@
         "Validation: form uses exactly 5 previous matches"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": "Depends on DATA-006a. More complex time-travel logic."
+      "passes": true,
+      "notes": "Added form, H2H, and league position features with time-travel safe queries."
     },
     {
       "id": "DATA-007",

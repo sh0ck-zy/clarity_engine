@@ -82,3 +82,13 @@ Session Info: Model $MODEL running on OpenCode
 - **Learnings for future iterations:**
   - Rest and congestion features should use fixtures_historical with date < fixture_date to avoid leakage
 ---
+
+## 2026-01-20 19:25 - DATA-006b
+Session Info: Model $MODEL running on OpenCode
+- Implemented form, head-to-head, and league position feature derivation with time-travel safe queries
+- Extended match feature backfill script to include form/H2H features
+- Files changed: src/data/feature_engineering.py, scripts/derive_match_features.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - Form and H2H queries should filter fixtures_historical with date < fixture_date and completed scores only
+  - League positions can be derived from fixtures_historical by season/league before fixture_date
+---
