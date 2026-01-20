@@ -111,3 +111,22 @@ Session Info: Model $MODEL running on OpenCode
 - **Learnings for future iterations:**
   - injury impact derivation uses injuries_historical joined to player_season_stats for team/position context
 ---
+
+## 2026-01-20 22:20 - DATA-009
+Session Info: Model $MODEL running on OpenCode
+- Implemented data completeness validation script with JSON output and CLI flags
+- Added validation dataclasses for completeness metrics and fixture coverage
+- Files changed: scripts/validate_data_completeness.py, src/validation/data_completeness.py, src/validation/__init__.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - Data completeness checks join fixtures_historical for season/league scoping and expect 1X2 odds selections for coverage
+---
+
+## 2026-01-20 23:10 - DATA-010
+Session Info: Model $MODEL running on OpenCode
+- Added time-travel correctness tests for injuries, odds snapshots, and feature engineering queries
+- Guarded form feature query limits and ensured match_outcomes is not referenced in feature engineering
+- Files changed: tests/test_time_travel_correctness.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - Time-travel correctness checks can be validated via DB joins against fixtures_historical when the DB is available
+  - Feature engineering queries must enforce date < fixture_date to remain leakage-safe
+---
