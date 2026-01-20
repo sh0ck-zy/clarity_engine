@@ -103,8 +103,8 @@
         "Unit test with Salah, Haaland, Van Dijk"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "Depends on DATA-002b (player stats). Position-specific logic is key."
+      "passes": true,
+      "notes": "Implemented player impact metrics with replacement deltas and unit tests for Salah, Haaland, Van Dijk. Tests not run (per instructions)."
     },
     {
       "id": "DATA-006a",

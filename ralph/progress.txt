@@ -63,3 +63,12 @@ Session Info: Model $MODEL running on OpenCode
   - Odds snapshots should use market_key "1X2" with selection_key "HOME"/"DRAW"/"AWAY" for validation lookups
   - pytest still fails in tests/test_time_travel_guards.py due to TimeTravelViolationError mismatch (pre-existing)
 ---
+
+## 2026-01-20 17:40 - DATA-005
+Session Info: Model $MODEL running on OpenCode
+- Implemented player impact calculator with per-90 metrics and replacement deltas
+- Added unit tests for Salah, Haaland, and Van Dijk impact calculations
+- Files changed: src/data/player_impact.py, src/data/__init__.py, tests/test_player_impact.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - player_impact_metrics stores per-90 metrics plus replacement_delta JSON for downstream use
+---
