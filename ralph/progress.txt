@@ -7,6 +7,7 @@ Started: 2026-01-18
 - **Tests live under `tests/`** (NOT ralph/test_*.py!)
 - Database schema lives in `src/database/schema.sql`; scripts follow the `PROJECT_ROOT` + `src` path injection pattern.
 - **IMPORTANT: Never create application code under `ralph/` - only orchestration files (PRD, progress, prompts).**
+- Odds snapshots should use market_key `1X2` with selection_key `HOME`/`DRAW`/`AWAY` for validation lookups.
 
 ## Log
 
@@ -50,5 +51,15 @@ Session Info: Model $MODEL running on OpenCode
 - **Learnings for future iterations:**
   - Transfermarkt raw CSVs live under datalake/transfermarkt/raw and are fetched from the GitHub repo in scripts/import_transfermarkt_dataset.py
   - FBref player IDs can be derived from cached player_stats.json using the same stable int logic as the scraper
+  - pytest still fails in tests/test_time_travel_guards.py due to TimeTravelViolationError mismatch (pre-existing)
+---
+
+## 2026-01-20 16:10 - DATA-004
+Session Info: Model $MODEL running on OpenCode
+- Implemented Football-Data.co.uk odds download/import script with team-name normalization and fixture matching
+- Added averaging across available bookmaker odds and snapshot timestamps set to kickoff minus one hour
+- Files changed: scripts/download_odds_historical.py, ralph/prd.json
+- **Learnings for future iterations:**
+  - Odds snapshots should use market_key "1X2" with selection_key "HOME"/"DRAW"/"AWAY" for validation lookups
   - pytest still fails in tests/test_time_travel_guards.py due to TimeTravelViolationError mismatch (pre-existing)
 ---

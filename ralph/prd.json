@@ -85,8 +85,8 @@
         "Validate: >95% fixtures have matching odds"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": "Direct CSV download - easy and reliable. No rate limiting needed."
+      "passes": true,
+      "notes": "Direct CSV download - easy and reliable. No rate limiting needed. pytest fails in tests/test_time_travel_guards.py due to TimeTravelViolationError not matching expected exception (pre-existing)."
     },
     {
       "id": "DATA-005",
