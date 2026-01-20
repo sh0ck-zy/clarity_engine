@@ -17,3 +17,5 @@ venv/
 
 # Project Data
 data/
+!src/data/
+!src/data/**
