@@ -370,9 +370,8 @@ class ContextBuilderV2:
             for _, row in df.iterrows():
                 injury_type = row['injury_reason'] if pd.notna(row['injury_reason']) else "Unknown"
 
-                # Estimate position from injury context (basic heuristic)
-                # In future, we can join with a players table for proper position data
-                position = "MF"  # Default to midfielder
+                # Use actual position from DB, with fallback to midfielder
+                position = row.get('position', 'MF') if pd.notna(row.get('position')) else 'MF'
 
                 player_absence = PlayerAbsence(
                     player_name=row['player_name'] or f"Player {row['player_id']}",
