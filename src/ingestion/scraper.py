@@ -145,8 +145,8 @@ def run_scraper():
                 away_xg = float(row['xG.1']) if 'xG.1' in row and pd.notna(row['xG.1']) else None
 
                 stats_rows = [
-                    (fixture_id, home_team, True, home_xg, away_xg, None, None),
-                    (fixture_id, away_team, False, away_xg, home_xg, None, None)
+                    (fixture_id, home_team, True, home_xg, away_xg, None, None, None),
+                    (fixture_id, away_team, False, away_xg, home_xg, None, None, None)
                 ]
                 save_team_stats(conn, stats_rows)
                 matches_saved += 1
