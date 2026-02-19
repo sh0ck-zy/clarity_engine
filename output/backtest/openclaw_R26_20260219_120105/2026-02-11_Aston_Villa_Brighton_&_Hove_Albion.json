@@ -1,0 +1,16 @@
+{
+  "fixture_id": "2026-02-11_Aston_Villa_Brighton_&_Hove_Albion",
+  "home_team": "Aston Villa",
+  "away_team": "Brighton & Hove Albion",
+  "round_number": 26,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.65,
+  "draw_prob": 0.14,
+  "away_win_prob": 0.21,
+  "recommended_bet": "Aston Villa to win and both teams to score.",
+  "tools_used": [],
+  "tokens_used": 8186,
+  "time_seconds": 17.51091718673706,
+  "model": "gpt-4o-mini"
+}

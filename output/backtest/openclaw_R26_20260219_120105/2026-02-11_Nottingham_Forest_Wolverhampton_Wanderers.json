@@ -1,0 +1,16 @@
+{
+  "fixture_id": "2026-02-11_Nottingham_Forest_Wolverhampton_Wanderers",
+  "home_team": "Nottingham Forest",
+  "away_team": "Wolverhampton Wanderers",
+  "round_number": 26,
+  "predicted_result": "H",
+  "predicted_scoreline": "1-0",
+  "home_win_prob": 0.65,
+  "draw_prob": 0.14,
+  "away_win_prob": 0.21,
+  "recommended_bet": "Nottingham Forest to win",
+  "tools_used": [],
+  "tokens_used": 8566,
+  "time_seconds": 16.473165035247803,
+  "model": "gpt-4o-mini"
+}

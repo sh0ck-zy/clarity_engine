@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-11_Crystal_Palace_Burnley",
+  "home_team": "Crystal Palace",
+  "away_team": "Burnley",
+  "round_number": 26,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-0",
+  "home_win_prob": 0.6,
+  "draw_prob": 0.16,
+  "away_win_prob": 0.24,
+  "recommended_bet": "Crystal Palace to win to nil",
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_h2h"
+  ],
+  "tokens_used": 5567,
+  "time_seconds": 18.25148606300354,
+  "model": "gpt-4o-mini"
+}
