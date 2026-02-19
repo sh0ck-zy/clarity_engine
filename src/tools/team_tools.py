@@ -145,6 +145,16 @@ def get_team_state(
         elif xg_diff < -1:
             summary_parts.append(f"xG trend: Underperforming ({xg_diff:.1f} xGD last 5)")
         
+        # Add finishing efficiency insight
+        xg_for = state.get("xg_for_last5", 0) or 0
+        goals_scored = state.get("goals_scored_last5", 0) or 0
+        if xg_for > 0:
+            finishing_diff = goals_scored - xg_for
+            if finishing_diff < -1.5:
+                summary_parts.append(f"⚠️ Finishing problems: {goals_scored} goals from {xg_for:.1f} xG ({goals_scored/xg_for*100:.0f}% conversion)")
+            elif finishing_diff > 1.5:
+                summary_parts.append(f"🔥 Clinical finishing: {goals_scored} goals from {xg_for:.1f} xG ({goals_scored/xg_for*100:.0f}% conversion)")
+        
         return ToolResponse(
             success=True,
             data=layers,
