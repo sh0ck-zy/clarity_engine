@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-11_Sunderland_Liverpool",
+  "home_team": "Sunderland",
+  "away_team": "Liverpool",
+  "round_number": 26,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-0",
+  "home_win_prob": 0.6,
+  "draw_prob": 0.16,
+  "away_win_prob": 0.24,
+  "recommended_bet": "Sunderland to win 2-0",
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_h2h"
+  ],
+  "tokens_used": 5456,
+  "time_seconds": 12.132118940353394,
+  "model": "gpt-4o-mini"
+}

@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-07_Wolverhampton_Wanderers_Chelsea",
+  "home_team": "Wolverhampton Wanderers",
+  "away_team": "Chelsea",
+  "round_number": 25,
+  "predicted_result": "A",
+  "predicted_scoreline": "0-3",
+  "home_win_prob": 0.21,
+  "draw_prob": 0.14,
+  "away_win_prob": 0.65,
+  "recommended_bet": "Chelsea to win by 2 or more goals",
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_h2h"
+  ],
+  "tokens_used": 5871,
+  "time_seconds": 11.425058841705322,
+  "model": "gpt-4o-mini"
+}
