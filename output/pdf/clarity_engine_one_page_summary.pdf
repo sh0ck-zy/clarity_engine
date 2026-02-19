@@ -1,0 +1,65 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 3035 >>
+stream
+BT /F2 18 Tf 42 760 Td (Clarity Engine - One-Page App Summary) Tj ET
+BT /F1 9 Tf 42 740 Td (Repo-based snapshot as of 2026-02-18) Tj ET
+BT /F2 12 Tf 42 724 Td (What it is) Tj ET
+BT /F1 10 Tf 42 710 Td (Clarity Engine is a pre-match football intelligence app that predicts match dynamics and explains why.) Tj ET
+BT /F1 10 Tf 42 696 Td (It combines deterministic data context with narrative analysis and post-match validation loops.) Tj ET
+BT /F2 12 Tf 42 680 Td (Who it is for) Tj ET
+BT /F1 10 Tf 42 666 Td (Primary persona: serious bettors who want pre-match edge and evidence-backed narratives.) Tj ET
+BT /F2 12 Tf 42 650 Td (What it does) Tj ET
+BT /F1 10 Tf 42 636 Td (- Builds team and player state snapshots per round from FotMob data in PostgreSQL.) Tj ET
+BT /F1 10 Tf 42 622 Td (- Exposes 14 agent tools for form, style, key players, injuries, H2H, matchups, and scenarios.) Tj ET
+BT /F1 10 Tf 42 608 Td (- Enforces round-based temporal filtering to prevent data leakage in historical analysis.) Tj ET
+BT /F1 10 Tf 42 594 Td (- Generates match context and predictions, then evaluates outcomes vs reality after matches.) Tj ET
+BT /F1 10 Tf 42 580 Td (- Serves API endpoints for fixtures, context, analysis, evaluation, failures, and health checks.) Tj ET
+BT /F1 10 Tf 42 566 Td (- Provides two operator UIs: Streamlit ops dashboard and a React/Vite web frontend.) Tj ET
+BT /F1 10 Tf 42 552 Td (- Marks `search_news` and `get_odds` as placeholders pending external integration.) Tj ET
+BT /F2 12 Tf 42 536 Td (How it works \(compact architecture from repo evidence\)) Tj ET
+BT /F1 10 Tf 42 522 Td (- Data ingestion: `src/data/providers/fotmob.py` + `scripts/backfill_fotmob.py` -> FotMob raw tables.) Tj ET
+BT /F1 10 Tf 42 508 Td (- State build: `scripts/populate_kg_states.py` + `scripts/populate_player_states.py` -> KG state tables.) Tj ET
+BT /F1 10 Tf 42 494 Td (- Reasoning tools: `src/tools/*` query PostgreSQL and return structured `ToolResponse` objects.) Tj ET
+BT /F1 10 Tf 42 480 Td (- Analysis layer: `ContextBuilderV2`, `ClarityEngine`, and `AnalysisEvaluator` produce and score outputs.) Tj ET
+BT /F1 10 Tf 42 466 Td (- Delivery: FastAPI \(`src/api/main.py`\) powers REST endpoints used by `src/web/src/lib/api.ts`.) Tj ET
+BT /F2 12 Tf 42 450 Td (How to run \(minimal getting started\)) Tj ET
+BT /F1 10 Tf 42 436 Td (1. `cd /Users/joao/Projects/clarity_engine && source venv/bin/activate`) Tj ET
+BT /F1 10 Tf 42 422 Td (2. Install dependencies: `pip install -r requirements.txt`) Tj ET
+BT /F1 10 Tf 42 408 Td (3. Ensure Postgres is running and `DATABASE_URL` is set \(or local fallback in db config\).) Tj ET
+BT /F1 10 Tf 42 394 Td (4. Quick tool check: `python -c "from src.tools import get_team_state; ..."`) Tj ET
+BT /F1 10 Tf 42 380 Td (5. Run API: `uvicorn src.api.main:app --reload --port 8000`) Tj ET
+BT /F2 12 Tf 42 364 Td (Not found in repo) Tj ET
+BT /F1 10 Tf 42 350 Td (- Single command bootstrap for DB schema + seed data.) Tj ET
+BT /F1 10 Tf 42 336 Td (- Production deployment/runbook instructions.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000003338 00000 n 
+0000003408 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+3483
+%%EOF
