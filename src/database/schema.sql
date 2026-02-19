@@ -378,6 +378,90 @@ CREATE INDEX IF NOT EXISTS idx_evaluations_fixture ON analysis_evaluations(fixtu
 CREATE INDEX IF NOT EXISTS idx_evaluations_prompt ON analysis_evaluations(prompt_version);
 CREATE INDEX IF NOT EXISTS idx_evaluations_report ON analysis_evaluations(report_id);
 
+-- ============================================================
+-- FOTMOB TABLES
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS fotmob_matches (
+    fotmob_match_id   INT PRIMARY KEY,
+    league_id         INT NOT NULL DEFAULT 47,
+    season            TEXT NOT NULL,
+    round_number      INT,
+    match_date        DATE NOT NULL,
+    home_team_id      INT NOT NULL,
+    home_team_name    TEXT NOT NULL,
+    away_team_id      INT NOT NULL,
+    away_team_name    TEXT NOT NULL,
+    home_score        INT,
+    away_score        INT,
+    ht_home_score     INT,
+    ht_away_score     INT,
+    status            TEXT NOT NULL,
+    venue             TEXT,
+    attendance        INT,
+    referee           TEXT,
+    formation_home    TEXT,
+    formation_away    TEXT,
+    events            JSONB,
+    stats             JSONB,
+    home_lineup       JSONB,
+    away_lineup       JSONB,
+    shotmap           JSONB,
+    commentary        JSONB,
+    match_facts       JSONB,
+    momentum          JSONB,
+    home_avg_rating   DECIMAL(4,2),
+    away_avg_rating   DECIMAL(4,2),
+    motm_player_id    INT,
+    motm_player_name  TEXT,
+    raw_json          JSONB NOT NULL,
+    fetched_at        TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMP NOT NULL DEFAULT NOW(),
+    clarity_fixture_id TEXT
+);
+
+CREATE TABLE IF NOT EXISTS fotmob_player_performances (
+    id SERIAL PRIMARY KEY,
+    fotmob_match_id   INT REFERENCES fotmob_matches(fotmob_match_id) ON DELETE CASCADE,
+    player_id         INT,
+    player_name       TEXT NOT NULL,
+    team_id           INT,
+    team_name         TEXT NOT NULL,
+    is_home           BOOLEAN,
+    is_starter        BOOLEAN,
+    position_id       INT,
+    shirt_number      TEXT,
+    rating            DECIMAL(3,1),
+    minutes_played    INT,
+    goals             INT DEFAULT 0,
+    assists           INT DEFAULT 0,
+    xg                DECIMAL(5,3),
+    xgot              DECIMAL(5,3),
+    xa                DECIMAL(5,3),
+    shots             INT,
+    shots_on_target   INT,
+    passes            INT,
+    passes_accurate   INT,
+    chances_created   INT,
+    tackles           INT,
+    interceptions     INT,
+    defensive_actions INT,
+    fantasy_score     TEXT,
+    sub_in_minute     INT,
+    sub_out_minute    INT,
+    stats_json        JSONB,
+    UNIQUE(fotmob_match_id, player_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_fpp_match ON fotmob_player_performances(fotmob_match_id);
+CREATE INDEX IF NOT EXISTS idx_fpp_player ON fotmob_player_performances(player_id);
+CREATE INDEX IF NOT EXISTS idx_fpp_player_name ON fotmob_player_performances(player_name);
+CREATE INDEX IF NOT EXISTS idx_fpp_rating ON fotmob_player_performances(rating);
+CREATE INDEX IF NOT EXISTS idx_fpp_team ON fotmob_player_performances(team_name);
+CREATE INDEX IF NOT EXISTS idx_fotmob_matches_date ON fotmob_matches(match_date);
+CREATE INDEX IF NOT EXISTS idx_fotmob_matches_round ON fotmob_matches(round_number);
+CREATE INDEX IF NOT EXISTS idx_fotmob_matches_season ON fotmob_matches(season);
+
 -- 6. ANALYTICAL VIEW (The "Smart" Layer)
 -- This is the block you were asking for!
 -- It joins the Hub (fixtures) and Spoke (stats) and does the math.

@@ -12,3 +12,6 @@ soccerdata==1.8.7
 setuptools>=65.0.0
 lxml==4.9.4
 html5lib==1.1
+streamlit>=1.28.0
+fastapi>=0.109.0
+uvicorn>=0.27.0

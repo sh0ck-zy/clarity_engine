@@ -1,0 +1,98 @@
+{
+  "match": {
+    "home": "West Ham United",
+    "away": "Manchester United",
+    "score": "1-1",
+    "date": "2026-02-10",
+    "kickoff": "21:15",
+    "stadium": "London Stadium",
+    "referee": "Simon Hooper",
+    "attendance": 62473,
+    "round": 26,
+    "league": "Premier League"
+  },
+  "goals": [
+    {"minute": 50, "player": "Soucek", "team": "West Ham", "assist": "Bowen", "xG": 0.48, "xGOT": 0.81},
+    {"minute": "90+6", "player": "Sesko", "team": "Man United", "assist": "Mbeumo", "xG": 0.09, "xGOT": 0.44}
+  ],
+  "team_stats": {
+    "possession": {"home": 35, "away": 65},
+    "xG": {"home": 1.06, "away": 0.37},
+    "shots": {"home": 5, "away": 6},
+    "shots_on_target": {"home": 2, "away": 2},
+    "big_chances": {"home": 2, "away": 1},
+    "passes": {"home": 126, "away": 318},
+    "pass_accuracy": {"home": 71, "away": 86},
+    "corners": {"home": 3, "away": 1},
+    "fouls": {"home": 6, "away": 2},
+    "tackles": {"home": 10, "away": 11},
+    "interceptions": {"home": 8, "away": 4}
+  },
+  "formations": {
+    "home": "4-2-3-1",
+    "away": "4-2-3-1"
+  },
+  "player_ratings": {
+    "West Ham": {
+      "starters": {
+        "Hermansen": {"rating": 6.4, "mins": 90, "position": "GK"},
+        "Wan-Bissaka": {"rating": 7.1, "mins": 90, "position": "RB"},
+        "Mavropanos": {"rating": 7.0, "mins": 90, "position": "CB"},
+        "Disasi": {"rating": 6.7, "mins": 90, "position": "CB"},
+        "Diouf": {"rating": 6.7, "mins": 80, "position": "LB"},
+        "Mateus Fernandes": {"rating": 7.5, "mins": 90, "position": "DM"},
+        "Potts": {"rating": 7.2, "mins": 79, "position": "CM"},
+        "Bowen": {"rating": 7.2, "mins": 89, "position": "RW", "assists": 1},
+        "Soucek": {"rating": 7.5, "mins": 90, "position": "AM", "goals": 1, "xG": 0.48},
+        "Summerville": {"rating": 6.7, "mins": 89, "position": "LW"},
+        "Castellanos": {"rating": 5.8, "mins": 69, "position": "ST"}
+      },
+      "subs": {
+        "Wilson": {"rating": 6.1, "mins": 21, "xG": 0.40},
+        "Magassa": {"rating": 6.5, "mins": 11},
+        "Scarles": {"rating": 6.4, "mins": 10},
+        "Walker-Peters": {"rating": null, "mins": 1},
+        "Traore": {"rating": null, "mins": 1, "xG": 0.15}
+      }
+    },
+    "Man United": {
+      "starters": {
+        "Lammens": {"rating": 7.1, "mins": 90, "position": "GK"},
+        "Dalot": {"rating": 7.1, "mins": 82, "position": "RB", "yellow": true},
+        "Maguire": {"rating": 7.2, "mins": 68, "position": "CB"},
+        "Martinez": {"rating": 7.7, "mins": 90, "position": "CB"},
+        "Shaw": {"rating": 7.7, "mins": 90, "position": "LB"},
+        "Mainoo": {"rating": 7.1, "mins": 90, "position": "CM"},
+        "Casemiro": {"rating": 7.3, "mins": 90, "position": "DM", "goal_disallowed": true},
+        "Amad": {"rating": 7.2, "mins": 90, "position": "RW"},
+        "Bruno Fernandes": {"rating": 7.1, "mins": 90, "position": "AM"},
+        "Mbeumo": {"rating": 7.5, "mins": 90, "position": "LW", "assists": 1},
+        "Cunha": {"rating": 6.5, "mins": 69, "position": "ST"}
+      },
+      "subs": {
+        "Yoro": {"rating": 6.5, "mins": 22},
+        "Sesko": {"rating": 6.9, "mins": 21, "goals": 1, "xG": 0.12},
+        "Zirkzee": {"rating": null, "mins": 8, "xG": 0.09}
+      }
+    }
+  },
+  "events": [
+    {"minute": 50, "type": "goal", "player": "Soucek", "team": "West Ham"},
+    {"minute": 57, "type": "yellow", "player": "Dalot", "team": "Man United"},
+    {"minute": 63, "type": "goal_disallowed", "player": "Casemiro", "team": "Man United", "reason": "offside"},
+    {"minute": 68, "type": "sub", "team": "Man United", "in": "Yoro", "out": "Maguire"},
+    {"minute": 69, "type": "sub", "team": "Man United", "in": "Sesko", "out": "Cunha"},
+    {"minute": 69, "type": "sub", "team": "West Ham", "in": "Wilson", "out": "Castellanos"},
+    {"minute": 70, "type": "yellow", "player": "Mateus Fernandes", "team": "West Ham"},
+    {"minute": 79, "type": "sub", "team": "West Ham", "in": "Magassa", "out": "Potts"},
+    {"minute": 80, "type": "sub", "team": "West Ham", "in": "Scarles", "out": "Diouf"},
+    {"minute": 82, "type": "sub", "team": "Man United", "in": "Zirkzee", "out": "Dalot"},
+    {"minute": 90, "type": "sub", "team": "West Ham", "in": "Walker-Peters", "out": "Bowen"},
+    {"minute": 90, "type": "sub", "team": "West Ham", "in": "Traore", "out": "Summerville"},
+    {"minute": "90+6", "type": "goal", "player": "Sesko", "team": "Man United"}
+  ],
+  "insights": {
+    "motm_poll": {"Mateus Fernandes": 19, "Soucek": 39, "Wan-Bissaka": 25, "Bowen": 17},
+    "pre_match_prediction": {"West Ham": 12, "Draw": 14, "Man United": 74}
+  }
+}

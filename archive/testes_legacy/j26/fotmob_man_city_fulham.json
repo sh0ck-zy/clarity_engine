@@ -1,0 +1,71 @@
+{
+  "match": {
+    "home_team": "Manchester City",
+    "away_team": "Fulham",
+    "date": "2026-02-11",
+    "competition": "Premier League",
+    "matchday": 26,
+    "venue": "Etihad Stadium",
+    "score": {
+      "home": 3,
+      "away": 0
+    },
+    "xG": {
+      "home": 1.37,
+      "away": 1.42
+    }
+  },
+  "goals": [
+    {"minute": 24, "player": "Antoine Semenyo", "team": "Manchester City", "assist": null, "xG": 0.55},
+    {"minute": 30, "player": "Nico O'Reilly", "team": "Manchester City", "assist": "Antoine Semenyo", "xG": 0.26},
+    {"minute": 39, "player": "Erling Haaland", "team": "Manchester City", "assist": "Phil Foden", "xG": 0.08}
+  ],
+  "players": {
+    "Manchester City": [
+      {"name": "Gianluigi Donnarumma", "position": "GK", "rating": 8.1, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.00},
+      {"name": "Matheus Nunes", "position": "RB", "rating": 7.1, "minutes": 60, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.01},
+      {"name": "Ruben Dias", "position": "CB", "rating": 7.5, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.01},
+      {"name": "Marc Guehi", "position": "CB", "rating": 7.9, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.07},
+      {"name": "Rayan Ait Nouri", "position": "LB", "rating": 8.1, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.02},
+      {"name": "Bernardo Silva", "position": "CM", "rating": 7.5, "minutes": 60, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.03, "yellow_card": true},
+      {"name": "Rodri", "position": "DM", "rating": 6.4, "minutes": 71, "goals": 0, "assists": 0, "xG": 0.03, "xA": 0.03},
+      {"name": "Nico O'Reilly", "position": "CM", "rating": 7.8, "minutes": 90, "goals": 1, "assists": 0, "xG": 0.48, "xA": 0.01},
+      {"name": "Phil Foden", "position": "RW", "rating": 8.0, "minutes": 71, "goals": 0, "assists": 1, "xG": 0.20, "xA": 0.06, "yellow_card": true},
+      {"name": "Erling Haaland", "position": "ST", "rating": 7.4, "minutes": 45, "goals": 1, "assists": 0, "xG": 0.12, "xA": 0.00},
+      {"name": "Antoine Semenyo", "position": "LW", "rating": 8.0, "minutes": 90, "goals": 1, "assists": 1, "xG": 0.55, "xA": 0.17},
+      {"name": "Omar Marmoush", "position": "ST", "rating": 6.5, "minutes": 45, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.00, "sub": true},
+      {"name": "Abdukodir Khusanov", "position": "RB", "rating": 6.7, "minutes": 30, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.00, "sub": true},
+      {"name": "Tijjani Reijnders", "position": "CM", "rating": 6.5, "minutes": 30, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.01, "sub": true},
+      {"name": "Nico González", "position": "DM", "rating": 6.3, "minutes": 19, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.00, "sub": true, "yellow_card": true},
+      {"name": "Rayan Cherki", "position": "AM", "rating": 6.3, "minutes": 19, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.00, "sub": true}
+    ],
+    "Fulham": [
+      {"name": "Bernd Leno", "position": "GK", "rating": 4.8, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.00},
+      {"name": "Kenny Tete", "position": "RB", "rating": 6.4, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.27, "xA": 0.07},
+      {"name": "Joachim Andersen", "position": "CB", "rating": 6.1, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.01, "yellow_card": true},
+      {"name": "Calvin Bassey", "position": "CB", "rating": 6.0, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.03, "xA": 0.00},
+      {"name": "Ryan Sessegnon", "position": "LB", "rating": 6.1, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.01},
+      {"name": "Sander Berge", "position": "DM", "rating": 4.5, "minutes": 81, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.01},
+      {"name": "Alex Iwobi", "position": "CM", "rating": 5.1, "minutes": 90, "goals": 0, "assists": 0, "xG": 0.05, "xA": 0.02},
+      {"name": "Harry Wilson", "position": "RW", "rating": 5.8, "minutes": 72, "goals": 0, "assists": 0, "xG": 0.08, "xA": 0.23},
+      {"name": "Emile Smith Rowe", "position": "AM", "rating": 6.4, "minutes": 60, "goals": 0, "assists": 0, "xG": 0.05, "xA": 0.02},
+      {"name": "Samuel Chukwueze", "position": "LW", "rating": 6.6, "minutes": 60, "goals": 0, "assists": 0, "xG": 0.04, "xA": 0.11},
+      {"name": "Raul Jiménez", "position": "ST", "rating": 6.0, "minutes": 60, "goals": 0, "assists": 0, "xG": 0.56, "xA": 0.00},
+      {"name": "Joshua King", "position": "AM", "rating": 6.4, "minutes": 30, "goals": 0, "assists": 0, "xG": 0.21, "xA": 0.00, "sub": true},
+      {"name": "Kevin", "position": "LW", "rating": 6.0, "minutes": 30, "goals": 0, "assists": 0, "xG": 0.03, "xA": 0.07, "sub": true},
+      {"name": "Rodrigo Muniz", "position": "ST", "rating": 6.4, "minutes": 30, "goals": 0, "assists": 0, "xG": 0.04, "xA": 0.00, "sub": true},
+      {"name": "Oscar Bobb", "position": "RW", "rating": 6.4, "minutes": 18, "goals": 0, "assists": 0, "xG": 0.07, "xA": 0.00, "sub": true},
+      {"name": "Harrison Reed", "position": "DM", "rating": 6.0, "minutes": 9, "goals": 0, "assists": 0, "xG": 0.00, "xA": 0.00, "sub": true}
+    ]
+  },
+  "match_stats": {
+    "possession": {"home": 56, "away": 44},
+    "shots": {"home": 13, "away": 14},
+    "shots_on_target": {"home": 5, "away": 3},
+    "big_chances": {"home": 2, "away": 1},
+    "passes_accurate": {"home": "577 (91%)", "away": "418 (85%)"},
+    "fouls": {"home": 8, "away": 10},
+    "corners": {"home": 4, "away": 4},
+    "yellow_cards": {"home": 3, "away": 1}
+  }
+}
