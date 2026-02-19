@@ -19,3 +19,4 @@ venv/
 data/
 !src/data/
 !src/data/**
+__pycache__/
