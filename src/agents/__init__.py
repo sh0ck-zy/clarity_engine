@@ -6,7 +6,8 @@ Two approaches for match analysis:
 - OpenClawAgent: LLM-driven investigation with tool access
 """
 
-from .base import AnalysisReport
+from .base import AnalysisReport, MatchReality
 from .coded import CodedAgent
+from .openclaw import OpenClawAgent
 
-__all__ = ["AnalysisReport", "CodedAgent"]
+__all__ = ["AnalysisReport", "MatchReality", "CodedAgent", "OpenClawAgent"]

@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-07_Fulham_Everton",
+  "home_team": "Fulham",
+  "away_team": "Everton",
+  "round_number": 25,
+  "predicted_result": null,
+  "predicted_scoreline": null,
+  "home_win_prob": null,
+  "draw_prob": null,
+  "away_win_prob": null,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_h2h"
+  ],
+  "tokens_used": 5460,
+  "time_seconds": 12.769278049468994,
+  "model": "gpt-4o-mini"
+}

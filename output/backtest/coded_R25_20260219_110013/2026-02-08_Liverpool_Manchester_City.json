@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-08_Liverpool_Manchester_City",
+  "home_team": "Liverpool",
+  "away_team": "Manchester City",
+  "round_number": 25,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-0",
+  "home_win_prob": 0.6,
+  "draw_prob": 0.16,
+  "away_win_prob": 0.24,
+  "recommended_bet": "Liverpool to win to nil",
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_h2h"
+  ],
+  "tokens_used": 5587,
+  "time_seconds": 15.494410037994385,
+  "model": "gpt-4o-mini"
+}
