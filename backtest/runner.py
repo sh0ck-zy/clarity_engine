@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 
 from src.agents.base import AnalysisReport
 from src.agents.coded import CodedAgent
-# from src.agents.openclaw import OpenClawAgent  # Uncomment when ready
+from src.agents.openclaw import OpenClawAgent
 
 from .fixtures import get_round_fixtures, get_fixtures_range, Fixture
 from .reality import get_round_realities, get_match_reality
@@ -44,7 +44,7 @@ class BacktestRunner:
         
         # Initialize agents
         self.coded_agent = CodedAgent()
-        # self.openclaw_agent = OpenClawAgent()
+        self.openclaw_agent = OpenClawAgent()
     
     def run(
         self,
@@ -191,9 +191,63 @@ class BacktestRunner:
         parallel: bool = True,
     ) -> List[AnalysisReport]:
         """Run OpenClaw agent on all fixtures."""
-        # TODO: Implement when OpenClaw wrapper is ready
-        print("OpenClaw agent not yet implemented")
-        return []
+        
+        reports = []
+        
+        if parallel and len(fixtures) > 1:
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                futures = {
+                    executor.submit(
+                        self._analyze_openclaw,
+                        f.home_team_id,
+                        f.away_team_id,
+                        f.round_number,
+                        f.match_date,
+                    ): f
+                    for f in fixtures
+                }
+                
+                for future in as_completed(futures):
+                    fixture = futures[future]
+                    try:
+                        report = future.result()
+                        reports.append(report)
+                        mark = "✓" if report.predicted_result else "?"
+                        print(f"  {mark} {fixture.home_team} vs {fixture.away_team}: {report.predicted_result or '?'} ({report.time_seconds:.1f}s, {len(report.tools_used)} tools)")
+                    except Exception as e:
+                        print(f"  ✗ {fixture.home_team} vs {fixture.away_team}: Error - {e}")
+        else:
+            for f in fixtures:
+                try:
+                    report = self._analyze_openclaw(
+                        f.home_team_id,
+                        f.away_team_id,
+                        f.round_number,
+                        f.match_date,
+                    )
+                    reports.append(report)
+                    mark = "✓" if report.predicted_result else "?"
+                    print(f"  {mark} {f.home_team} vs {f.away_team}: {report.predicted_result or '?'} ({report.time_seconds:.1f}s, {len(report.tools_used)} tools)")
+                except Exception as e:
+                    print(f"  ✗ {f.home_team} vs {f.away_team}: Error - {e}")
+        
+        return reports
+    
+    def _analyze_openclaw(
+        self,
+        home_team_id: int,
+        away_team_id: int,
+        round_number: int,
+        match_date,
+    ) -> AnalysisReport:
+        """Run single OpenClaw analysis."""
+        return self.openclaw_agent.analyze(
+            home_team=home_team_id,
+            away_team=away_team_id,
+            round_number=round_number,
+            match_date=match_date,
+            backtest_mode=True,
+        )
     
     def _save_reports(
         self,
