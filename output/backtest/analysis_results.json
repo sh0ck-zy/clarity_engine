@@ -1,0 +1,341 @@
+[
+  {
+    "match": "Manchester United vs Manchester City",
+    "round": 22,
+    "actual": "2-0",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 5.5,
+    "reading": 4,
+    "factors": 5,
+    "reasoning": 6,
+    "boldness": 7,
+    "explanation": "The analyst's prediction showed some understanding of the match dynamics, particularly regarding City's attacking prowess and United's defensive vulnerabilities. However, they underestimated United's ability to capitalize on their chances and dominate the match despite having lower possession. The reasoning was somewhat sound but lacked depth in analyzing United's recent form and the impact of their home advantage. The prediction was bold, but ultimately misguided, reflecting a misjudgment of the match's flow and outcome.",
+    "correct_insights": [
+      "City's attacking depth and pressure were correctly identified as significant factors.",
+      "The analyst acknowledged the unpredictable nature of derby matches."
+    ],
+    "missed": [
+      "Underestimated Manchester United's recent form and ability to score.",
+      "Failed to recognize that United could dominate the match despite lower possession.",
+      "Did not account for the psychological impact of playing at home for United."
+    ]
+  },
+  {
+    "match": "Chelsea vs Brentford",
+    "round": 22,
+    "actual": "2-0",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 5.5,
+    "reading": 4,
+    "factors": 5,
+    "reasoning": 6,
+    "boldness": 7,
+    "explanation": "The analyst's prediction was based on Brentford's recent form and Chelsea's struggles, which were valid points. However, they misread the match dynamics, expecting Brentford to dominate and score first, while Chelsea actually controlled the game and capitalized on their chances. The reasoning was somewhat sound but lacked depth in analyzing Chelsea's potential for efficiency despite their struggles. The bold prediction of a Brentford win was a strong stance, but ultimately incorrect, reflecting a misjudgment of Chelsea's home advantage and ability to perform under pressure.",
+    "correct_insights": [
+      "Brentford's recent form is better than Chelsea's.",
+      "Chelsea's struggles with confidence could impact their performance."
+    ],
+    "missed": [
+      "Chelsea's ability to be efficient with limited chances.",
+      "The impact of Chelsea's home advantage on their performance.",
+      "Brentford's defensive vulnerabilities that Chelsea could exploit."
+    ]
+  },
+  {
+    "match": "Leeds United vs Fulham",
+    "round": 22,
+    "actual": "1-0",
+    "pred": "D",
+    "correct": "\u2717",
+    "quality": 5.5,
+    "reading": 5,
+    "factors": 6,
+    "reasoning": 6,
+    "boldness": 5,
+    "explanation": "The analyst demonstrated a reasonable understanding of the match dynamics, noting the psychological states of both teams and the potential for a tight contest. However, they underestimated Leeds' attacking capabilities and overestimated Fulham's form, leading to a prediction of a draw. While they identified key factors such as home advantage and attacking prowess, their conclusion lacked specificity and clarity regarding Leeds' recent improvement. The prediction was hedged, lacking a strong stance on what would unfold, which affected the boldness score.",
+    "correct_insights": [
+      "Leeds United's home advantage could boost their performance.",
+      "Fulham's recent form is strong, with a good attacking lineup.",
+      "Both teams are relatively evenly matched based on recent head-to-heads."
+    ],
+    "missed": [
+      "Leeds United's recent goal-scoring form and ability to capitalize on chances.",
+      "The impact of Leeds' pressing style against Fulham's defense.",
+      "The likelihood of Leeds winning given their xG dominance in the match."
+    ]
+  },
+  {
+    "match": "Liverpool vs Burnley",
+    "round": 22,
+    "actual": "1-1",
+    "pred": "H",
+    "correct": "\u2717",
+    "quality": 7.0,
+    "reading": 7,
+    "factors": 8,
+    "reasoning": 7,
+    "boldness": 6,
+    "explanation": "The analyst demonstrated a solid understanding of the match dynamics, predicting Liverpool's dominance in possession and their tendency to score first. However, they underestimated Burnley's ability to capitalize on defensive lapses, which ultimately led to a draw. The reasoning was generally sound, but some aspects lacked depth, particularly regarding Burnley's potential to exploit Liverpool's pressure. The analyst's prediction of a low-scoring game was insightful, but the boldness of their scoreline prediction could have been more daring given the context of Liverpool's attacking form.",
+    "correct_insights": [
+      "Liverpool's strong home record and attacking capabilities.",
+      "Burnley's struggles to convert chances into goals.",
+      "Psychological advantage of playing at home enhances Liverpool's confidence."
+    ],
+    "missed": [
+      "Burnley's potential to exploit Liverpool's defensive lapses.",
+      "Liverpool's tendency to draw matches despite dominating possession.",
+      "The impact of pressure on Liverpool leading to mistakes."
+    ]
+  },
+  {
+    "match": "Sunderland vs Crystal Palace",
+    "round": 22,
+    "actual": "2-1",
+    "pred": "D",
+    "correct": "\u2717",
+    "quality": 5.5,
+    "reading": 5,
+    "factors": 6,
+    "reasoning": 6,
+    "boldness": 5,
+    "explanation": "The analyst demonstrated a reasonable understanding of the match dynamics, predicting a tightly contested affair and acknowledging Sunderland's home advantage. However, they underestimated Sunderland's attacking potential and overemphasized the likelihood of a draw. While they identified some relevant factors, such as recent form and defensive vulnerabilities, they failed to recognize Sunderland's ability to dominate the match, as reflected in the xG and possession statistics. Their reasoning was sound but lacked depth in analyzing Sunderland's attacking capabilities. The prediction of a draw was cautious and lacked the boldness needed to make a memorable statement.",
+    "correct_insights": [
+      "Both teams are struggling for form.",
+      "Sunderland has a solid home record.",
+      "Crystal Palace has shown defensive vulnerabilities."
+    ],
+    "missed": [
+      "Sunderland's attacking potential was underestimated.",
+      "The significance of Sunderland's recent goal-scoring ability was overlooked.",
+      "The prediction of a goalless draw at 60 minutes was overly pessimistic given Sunderland's dominance."
+    ]
+  },
+  {
+    "match": "Tottenham Hotspur vs West Ham United",
+    "round": 22,
+    "actual": "1-2",
+    "pred": "D",
+    "correct": "\u2717",
+    "quality": 6.0,
+    "reading": 6,
+    "factors": 7,
+    "reasoning": 6,
+    "boldness": 5,
+    "explanation": "The analyst demonstrated a reasonable understanding of the match dynamics, predicting a tense encounter with both teams potentially scoring. However, they underestimated West Ham's ability to capitalize on their early lead and failed to accurately assess Tottenham's struggles in converting possession into goals. While they identified psychological factors and the potential for a draw, their prediction lacked the boldness to fully commit to the possibility of an away win, which ultimately occurred. Overall, the analysis was solid but could have been more precise in anticipating the flow of the game and the decisive factors that led to West Ham's victory.",
+    "correct_insights": [
+      "West Ham's desperate need for points due to their relegation battle could create pressure.",
+      "Tottenham's home advantage and attacking threats could exploit West Ham's defensive issues.",
+      "Both teams have shown vulnerability in defense, leading to goals despite their struggles."
+    ],
+    "missed": [
+      "West Ham's ability to score first and maintain confidence under pressure.",
+      "Tottenham's inability to convert possession into goals despite their dominance.",
+      "The potential for West Ham to effectively counter-attack and exploit Tottenham's defensive vulnerabilities."
+    ]
+  },
+  {
+    "match": "Nottingham Forest vs Arsenal",
+    "round": 22,
+    "actual": "0-0",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 6.5,
+    "reading": 6,
+    "factors": 7,
+    "reasoning": 6,
+    "boldness": 7,
+    "explanation": "The analyst demonstrated a solid understanding of the psychological dynamics and team forms leading into the match, correctly identifying Arsenal's confidence and Nottingham Forest's struggles. However, they underestimated Nottingham's ability to defend and failed to predict a goalless draw despite acknowledging the potential for unpredictability in Nottingham's desperation. Their reasoning was generally sound but could have been more specific in analyzing tactical elements, and while they took a clear stance, their prediction lacked nuance regarding Nottingham's defensive capabilities.",
+    "correct_insights": [
+      "Arsenal's confidence and form were accurately assessed as advantageous.",
+      "Nottingham Forest's low morale and pressure due to relegation were correctly identified."
+    ],
+    "missed": [
+      "Underestimated Nottingham Forest's defensive resilience in a desperate situation.",
+      "Did not foresee the possibility of a goalless draw despite acknowledging unpredictability."
+    ]
+  },
+  {
+    "match": "Wolverhampton Wanderers vs Newcastle United",
+    "round": 22,
+    "actual": "0-0",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 5.75,
+    "reading": 6,
+    "factors": 5,
+    "reasoning": 7,
+    "boldness": 6,
+    "explanation": "The analyst demonstrated a reasonable understanding of the match dynamics, predicting that Newcastle would dominate due to their superior league position and attacking prowess. However, they failed to anticipate the match's lack of goals and the defensive resilience of Wolverhampton, which ultimately led to a goalless draw. While the reasoning was mostly sound, it lacked depth in considering Wolverhampton's home advantage and their ability to withstand pressure. The prediction of a Newcastle win was bold, but the confidence in a high-scoring game was misplaced given the context of the match.",
+    "correct_insights": [
+      "Newcastle's attacking players are in form and can exploit Wolves' defensive frailties.",
+      "Wolves are under extreme pressure and have struggled throughout the season.",
+      "Newcastle's position in the table provides them with a psychological advantage."
+    ],
+    "missed": [
+      "Wolves' home advantage and potential for defensive resilience.",
+      "The likelihood of a low-scoring game given both teams' recent performances and tactical setups."
+    ]
+  },
+  {
+    "match": "Aston Villa vs Everton",
+    "round": 22,
+    "actual": "0-1",
+    "pred": "H",
+    "correct": "\u2717",
+    "quality": 5.75,
+    "reading": 6,
+    "factors": 5,
+    "reasoning": 6,
+    "boldness": 7,
+    "explanation": "The analyst demonstrated a reasonable understanding of the match dynamics, predicting that Aston Villa would dominate possession and likely score first due to their attacking talents. However, they underestimated Everton's ability to capitalize on defensive vulnerabilities and failed to foresee their clinical finishing despite lower xG. The reasoning was generally sound, but it lacked depth in analyzing Everton's potential to exploit Villa's weaknesses. The prediction was bold, but the confidence level seemed misaligned with the actual outcome, as the match unfolded differently than anticipated.",
+    "correct_insights": [
+      "Aston Villa has a strong home record.",
+      "Everton's recent form has been poor.",
+      "Aston Villa's attacking talents could lead them to score first."
+    ],
+    "missed": [
+      "Everton's ability to defend effectively and capitalize on counter-attacks.",
+      "The significance of Everton's clinical finishing despite lower xG.",
+      "Aston Villa's struggles to convert possession into goals."
+    ]
+  },
+  {
+    "match": "Brighton & Hove Albion vs AFC Bournemouth",
+    "round": 22,
+    "actual": "1-1",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 7.0,
+    "reading": 7,
+    "factors": 8,
+    "reasoning": 7,
+    "boldness": 6,
+    "explanation": "The analyst demonstrated a solid understanding of the match dynamics, correctly identifying that Brighton would dominate possession and create chances, while Bournemouth would rely on counter-attacks. However, the prediction of a Bournemouth win was overly optimistic given their recent form and the historical context of the match. The reasoning was sound but could have been more nuanced in addressing Brighton's attacking struggles despite their possession dominance. The analyst took a clear stance, but the boldness could have been enhanced by acknowledging the potential for a draw, given the teams' recent encounters.",
+    "correct_insights": [
+      "Brighton would dominate possession and create more chances.",
+      "Bournemouth's attacking players are in good form.",
+      "The psychological pressure on Bournemouth could influence their performance."
+    ],
+    "missed": [
+      "Brighton's struggles in finishing despite creating chances.",
+      "The historical trend of draws between the two teams was overlooked.",
+      "The potential for a late equalizer was not anticipated."
+    ]
+  },
+  {
+    "match": "West Ham United vs Sunderland",
+    "round": 23,
+    "actual": "3-1",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 4.75,
+    "reading": 4,
+    "factors": 5,
+    "reasoning": 5,
+    "boldness": 6,
+    "explanation": "The analyst's prediction was ultimately incorrect, but their understanding of the psychological state of West Ham and Sunderland's mid-table struggles showed some depth. However, they misjudged the flow of the game, failing to recognize West Ham's attacking potential and Sunderland's defensive vulnerabilities. Their reasoning was somewhat sound but lacked specificity in how the match would unfold, leading to a prediction that did not align with the actual dynamics of the game.",
+    "correct_insights": [
+      "West Ham was under pressure due to their poor form.",
+      "Both teams had defensive vulnerabilities."
+    ],
+    "missed": [
+      "West Ham's attacking strength and ability to score early.",
+      "Sunderland's inability to capitalize on West Ham's defensive frailties.",
+      "The significance of West Ham's home advantage."
+    ]
+  },
+  {
+    "match": "Burnley vs Tottenham Hotspur",
+    "round": 23,
+    "actual": "2-2",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 7.0,
+    "reading": 7,
+    "factors": 8,
+    "reasoning": 7,
+    "boldness": 6,
+    "explanation": "The analyst demonstrated a solid understanding of the match dynamics, correctly identifying Burnley's pressure and Tottenham's attacking quality. They anticipated that Burnley's desperation could lead to a strong performance, which was evident in their scoring. However, while they predicted a Tottenham win, the late equalizer from Burnley showcased the unpredictability of the match, which the analyst did not fully account for. Their reasoning was mostly sound, but some aspects could have been more specific, particularly regarding how Burnley's vulnerabilities would manifest in the game. The prediction was bold in its scoreline, but the analyst could have taken a stronger stance on the potential for a draw given Burnley's fighting spirit.",
+    "correct_insights": [
+      "Burnley's pressure due to relegation concerns could inspire a strong performance.",
+      "Tottenham has more attacking quality and depth.",
+      "Both teams have defensive vulnerabilities that could lead to goals."
+    ],
+    "missed": [
+      "The potential for a late equalizer or draw was not fully considered.",
+      "Burnley's home advantage could have been emphasized more in their ability to perform under pressure.",
+      "The analyst did not account for the possibility of Tottenham's inconsistency leading to dropped points."
+    ]
+  },
+  {
+    "match": "Fulham vs Brighton & Hove Albion",
+    "round": 23,
+    "actual": "2-1",
+    "pred": "H",
+    "correct": "\u2713",
+    "quality": 7.5,
+    "reading": 8,
+    "factors": 7,
+    "reasoning": 8,
+    "boldness": 7,
+    "explanation": "The analyst demonstrated a solid understanding of the match dynamics, predicting a closely contested encounter with Fulham leveraging their home advantage. They anticipated the potential for both teams to score, which was accurate given the final scoreline. However, while they noted Brighton's attacking prowess, they didn't fully account for Fulham's clinical finishing despite their lower xG. The reasoning was sound and well-supported, but the analyst could have been bolder in emphasizing Fulham's recent goal-scoring form and Brighton's defensive vulnerabilities. Overall, the analysis was insightful and well-structured, leading to a strong evaluation of the match.",
+    "correct_insights": [
+      "Fulham's home advantage was correctly identified as a key factor.",
+      "Both teams were expected to score, which aligned with the final result.",
+      "Fulham's recent form was noted as a positive indicator."
+    ],
+    "missed": [
+      "Did not fully recognize Fulham's efficiency in front of goal despite lower xG.",
+      "Underestimated the impact of Fulham's recent goal-scoring ability.",
+      "Could have elaborated more on Brighton's defensive issues leading to goals conceded."
+    ]
+  },
+  {
+    "match": "Manchester City vs Wolverhampton Wanderers",
+    "round": 23,
+    "actual": "2-0",
+    "pred": "H",
+    "correct": "\u2713",
+    "quality": 7.25,
+    "reading": 8,
+    "factors": 7,
+    "reasoning": 8,
+    "boldness": 6,
+    "explanation": "The analyst demonstrated a solid understanding of the match dynamics, correctly predicting Manchester City's likely dominance and the potential for them to score first. Their analysis of the psychological edge and the tactical implications of each scenario was insightful. However, they could have placed more emphasis on Manchester City's recent goal-scoring form and the specific players who could impact the game, such as Haaland. While they made a bold call regarding the match being tighter than anticipated, their confidence level could have been higher given City's attacking capabilities.",
+    "correct_insights": [
+      "Manchester City likely to dominate possession and control the game.",
+      "Wolves' struggles in attack would hinder their scoring chances.",
+      "City's need for a win would impact their performance positively at home."
+    ],
+    "missed": [
+      "Underestimating Manchester City's recent goal-scoring form.",
+      "Not highlighting specific players like Haaland who could decisively influence the game.",
+      "The potential for City to score early and take control was not fully explored."
+    ]
+  },
+  {
+    "match": "AFC Bournemouth vs Liverpool",
+    "round": 23,
+    "actual": "3-2",
+    "pred": "A",
+    "correct": "\u2717",
+    "quality": 6.5,
+    "reading": 6,
+    "factors": 7,
+    "reasoning": 6,
+    "boldness": 7,
+    "explanation": "The analyst demonstrated a solid understanding of the match dynamics, recognizing the contrasting pressures on both teams and the potential for Bournemouth to score despite their defensive weaknesses. However, they underestimated Bournemouth's efficiency and overestimated Liverpool's ability to dominate the match. The reasoning was generally sound, but some conclusions lacked specificity, particularly regarding Bournemouth's attacking capabilities. The analyst took a clear stance with a bold prediction, but their confidence was misplaced given the actual match outcome.",
+    "correct_insights": [
+      "Both teams were under significant pressure.",
+      "Bournemouth's recent form indicated they could score.",
+      "Liverpool's confidence was fragile."
+    ],
+    "missed": [
+      "Bournemouth's efficiency in front of goal was underestimated.",
+      "The impact of Bournemouth's home advantage was not fully acknowledged.",
+      "Liverpool's defensive vulnerabilities were not highlighted adequately."
+    ]
+  }
+]
