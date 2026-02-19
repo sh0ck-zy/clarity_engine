@@ -1,0 +1,169 @@
+{
+  "project": "Clarity Engine",
+  "branchName": "phase-1-match-intelligence",
+  "description": "Phase 1: build match intelligence that beats generic ChatGPT previews with a deterministic facts layer, strict narrative schema, and post-match alignment evaluation.",
+  "userStories": [
+    {
+      "id": "P1-001",
+      "title": "Define match context schema and required fields",
+      "description": "As the founder, I need a stable context schema so narratives are grounded in deterministic inputs and are reproducible.",
+      "acceptanceCriteria": [
+        "Define context schema with required fields: form (last 5-10), xG/xGA trends, tactical proxies, injuries/lineups, Elo delta, schedule context",
+        "Schema documented with field types and allowed nulls",
+        "Context validation fails if required fields missing",
+        "Schema stored in repo"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Implemented in src/analysis/context_schema.py with dataclasses: MatchContext, TeamContext, TeamForm, TeamAbsences, HeadToHead, ScheduleContext, LeaguePosition, MarketOdds. validate_context() enforces required fields."
+    },
+    {
+      "id": "P1-002",
+      "title": "Inventory and validate data sources",
+      "description": "As the founder, I need to know which data sources are reliable so the context layer is consistent and trustworthy.",
+      "acceptanceCriteria": [
+        "List all data sources for form, xG, injuries, lineups, Elo and their update cadence",
+        "Identify gaps per league/season with a coverage report",
+        "Document failure modes and fallback rules"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Implemented in src/analysis/data_coverage.py. CoverageAnalyzer checks FBRef (xG), ClubElo, Market Odds, Understat (PPDA), Injuries. Generates coverage reports with recommendations."
+    },
+    {
+      "id": "P1-003",
+      "title": "Implement deterministic context builder",
+      "description": "As the system, I need a consistent context payload per fixture so LLM output is grounded and repeatable.",
+      "acceptanceCriteria": [
+        "Context builder outputs payload for >= 90% fixtures in a season",
+        "Payload includes all required fields per schema",
+        "Missing fields logged with reason codes",
+        "Context snapshots stored for audit/replay"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Implemented in src/analysis/context_builder_v2.py. ContextBuilderV2 builds strict-schema context with time-travel safe queries. Also preserves legacy MatchContextBuilder for backward compatibility."
+    },
+    {
+      "id": "P1-004",
+      "title": "Add data coverage diagnostics",
+      "description": "As the founder, I need to see where missing data will reduce narrative quality so I can fix sources first.",
+      "acceptanceCriteria": [
+        "Coverage report by fixture, team, and round",
+        "Coverage score stored per fixture",
+        "Missing signals summarized with counts"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Implemented in src/analysis/data_coverage.py with CoverageReport, FixtureCoverage, SeasonCoverage dataclasses. run_coverage_diagnostics() generates full reports."
+    },
+    {
+      "id": "P1-005",
+      "title": "Create strict narrative schema and prompt",
+      "description": "As the founder, I need a strict narrative format so outputs are comparable and evaluatable.",
+      "acceptanceCriteria": [
+        "Narrative schema includes: expected flow, key drivers, swing factors, risks, confidence band",
+        "Prompt references only context payload (no external info)",
+        "100% outputs validate against schema",
+        "No non-context facts in output"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Schema implemented in src/analysis/narrative_schema.py. Prompt integration exists in prompts/v4_evaluator.txt. validate_no_external_facts() checks for hallucinations."
+    },
+    {
+      "id": "P1-006",
+      "title": "Add schema validation for narratives",
+      "description": "As the system, I need to enforce schema validation so malformed outputs do not leak into evaluation.",
+      "acceptanceCriteria": [
+        "Schema validation rejects malformed outputs",
+        "Invalid outputs are logged with reason",
+        "Batch run summary includes invalid count"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Implemented in src/analysis/narrative_schema.py. validate_narrative() returns (is_valid, errors) tuple. parse_narrative() enforces typed output."
+    },
+    {
+      "id": "P1-007",
+      "title": "Post-match narrative alignment evaluator",
+      "description": "As the founder, I need a consistent evaluator that scores narrative alignment and outcome accuracy post-match.",
+      "acceptanceCriteria": [
+        "Evaluator outputs narrative score (0-100) and outcome accuracy (W/D/L)",
+        "Structured feedback and critical flags stored",
+        "Runs for >= 95% finished fixtures",
+        "Baseline prompt comparison supported"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Implemented in src/analysis/evaluator.py (AnalysisEvaluator) and src/analysis/validation.py (ValidationEngine). Scores stored in evaluations table."
+    },
+    {
+      "id": "P1-008",
+      "title": "Add time-travel safety checks for context",
+      "description": "As the system, I must guarantee no future data leaks into pre-match context.",
+      "acceptanceCriteria": [
+        "Context builder only uses matches before fixture date",
+        "Violations are logged and fail validation",
+        "Automated test covers time-travel guard"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Implemented in src/analysis/time_travel_guard.py. TimeTravelGuard validates context and database queries. validate_context_time_safety() convenience function available."
+    },
+    {
+      "id": "P1-009",
+      "title": "Phase 1 dashboard views",
+      "description": "As the founder, I need a dashboard that shows narrative quality trends, best/worst analyses, and coverage gaps.",
+      "acceptanceCriteria": [
+        "Narrative quality trend by round",
+        "Best/worst analysis table with drilldown",
+        "Coverage diagnostics for missing data",
+        "Filters: season, league, prompt, round"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Implemented in src/dashboard.py with Streamlit. Includes quality trends, best/worst tables, and filtering by season/league/round."
+    },
+    {
+      "id": "P1-010",
+      "title": "Batch + iteration loop",
+      "description": "As the founder, I need a repeatable batch run + evaluation loop to promote or roll back prompt changes.",
+      "acceptanceCriteria": [
+        "Batch generation for a full round completes within target time",
+        "Evaluation runs automatically after batch",
+        "Comparison vs baseline prompt available",
+        "Promotion/rollback decision logged"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Implemented in src/jobs/batch_runner.py. BatchRunner handles generation + evaluation loop with configurable prompts."
+    },
+    {
+      "id": "P1-011",
+      "title": "Add baseline comparisons",
+      "description": "As the founder, I need baselines so we can judge whether narrative quality is truly improving.",
+      "acceptanceCriteria": [
+        "Baseline prompt designated and compared in reports",
+        "Outcome accuracy and narrative score deltas shown",
+        "Baseline retained in dashboard filters"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Implemented in src/analysis/validation.py with compare_all_prompts(). Dashboard supports prompt filtering for comparison."
+    },
+    {
+      "id": "P1-012",
+      "title": "Add regression alerts",
+      "description": "As the founder, I need warnings when quality drops so we do not ship regressions.",
+      "acceptanceCriteria": [
+        "Alert thresholds defined for narrative score and outcome accuracy",
+        "Regression flagged in dashboard",
+        "Alerts logged to a report"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Implemented in src/analysis/regression_alerts.py. RegressionMonitor checks thresholds and generates alert summaries."
+    }
+  ]
+}

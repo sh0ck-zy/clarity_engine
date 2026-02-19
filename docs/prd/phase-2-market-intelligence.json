@@ -1,0 +1,137 @@
+{
+  "project": "Clarity Engine",
+  "branchName": "phase-2-market-intelligence",
+  "description": "Phase 2: build a backtested market intelligence layer that explains odds, computes edge, and enforces bet/no-bet gating.",
+  "userStories": [
+    {
+      "id": "P2-001",
+      "title": "Define market schema and required fields",
+      "description": "As the founder, I need a stable market schema so edge calculations are consistent and reproducible.",
+      "acceptanceCriteria": [
+        "Define market schema with required fields: opening odds, current odds, implied probabilities, edge, alignment, bet decision",
+        "Schema documented with field types and allowed nulls",
+        "Schema stored in repo"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-002",
+      "title": "Odds ingestion + history snapshots",
+      "description": "As the system, I need odds snapshots so market movement and edge can be evaluated over time.",
+      "acceptanceCriteria": [
+        "Odds snapshots captured for >= 90% fixtures in season",
+        "Opening + closing odds stored when available",
+        "Time-travel checks ensure odds captured pre-kickoff"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-003",
+      "title": "Implied probability calculator",
+      "description": "As the system, I need implied probabilities from odds to compare market vs model.",
+      "acceptanceCriteria": [
+        "Implied probabilities computed for 1X2",
+        "Overround calculated and stored",
+        "Missing odds handled with explicit nulls"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-004",
+      "title": "Internal probability model",
+      "description": "As the founder, I need a model probability estimate to compute edge vs market.",
+      "acceptanceCriteria": [
+        "Model probabilities generated for 1X2",
+        "Inputs documented (from Phase 1 context)",
+        "Outputs stored with timestamp"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-005",
+      "title": "Edge + alignment computation",
+      "description": "As the system, I need to compute edge and alignment to drive bet/no-bet decisions.",
+      "acceptanceCriteria": [
+        "Edge computed per outcome (model prob - market prob)",
+        "Alignment classification: agree / disagree / neutral",
+        "Edge stored per fixture"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-006",
+      "title": "Bet/no-bet gate",
+      "description": "As the founder, I need a strict gate so we only recommend bets with real edge.",
+      "acceptanceCriteria": [
+        "Gate uses edge threshold + confidence band",
+        "No-bet is default when data missing",
+        "Decision stored with rationale"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-007",
+      "title": "Backtest evaluation job",
+      "description": "As the founder, I need backtests that show whether edge and gating are profitable.",
+      "acceptanceCriteria": [
+        "ROI proxy computed per prompt and per confidence bucket",
+        "No-bet success rate computed",
+        "Unpriced bets tracked separately"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-008",
+      "title": "Market validation dashboard",
+      "description": "As the founder, I need market validation views to judge edge quality and risk.",
+      "acceptanceCriteria": [
+        "Edge vs outcome scatter plot",
+        "Confidence bucket performance table",
+        "No-bet success KPI"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-009",
+      "title": "Baseline market benchmarks",
+      "description": "As the founder, I need market baselines to compare against naive strategies.",
+      "acceptanceCriteria": [
+        "Bookmaker baseline ROI computed",
+        "Random baseline ROI computed",
+        "Baselines displayed alongside model"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P2-010",
+      "title": "Time-travel safety checks for market data",
+      "description": "As the system, I must guarantee market evaluation never uses post-kickoff odds.",
+      "acceptanceCriteria": [
+        "Odds captured_at < kickoff enforced",
+        "Violations logged and fail validation",
+        "Automated tests cover time-travel guard"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

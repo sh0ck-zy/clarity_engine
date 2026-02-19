@@ -1,0 +1,111 @@
+{
+  "project": "Clarity Engine",
+  "branchName": "phase-3-automation-growth",
+  "description": "Phase 3: automate analysis publishing and build the growth funnel while protecting quality.",
+  "userStories": [
+    {
+      "id": "P3-001",
+      "title": "Define publishing cadence and coverage targets",
+      "description": "As the founder, I need a clear cadence and coverage plan so automation knows what to publish.",
+      "acceptanceCriteria": [
+        "Cadence defined per league and matchday",
+        "Coverage targets documented",
+        "Publish windows set (pre-kickoff)"]
+      ,
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P3-002",
+      "title": "Build scheduler for batch runs",
+      "description": "As the system, I need scheduled batch runs so analyses are produced without manual steps.",
+      "acceptanceCriteria": [
+        "Scheduler triggers batch runs by round/date",
+        "Failures retry with exponential backoff",
+        "Run logs saved with summary"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P3-003",
+      "title": "Telegram publishing pipeline",
+      "description": "As the system, I need a reliable publisher so reports land in Telegram on time.",
+      "acceptanceCriteria": [
+        "Publisher posts to configured channel",
+        "Message formatting uses approved template",
+        "Failures logged and retried"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P3-004",
+      "title": "Free vs paid access gating",
+      "description": "As the founder, I need tiered access so free users see value but power users pay.",
+      "acceptanceCriteria": [
+        "Free tier daily cap enforced",
+        "Paid tier unlocks full access",
+        "Access rules configurable"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P3-005",
+      "title": "Quality guardrails in publishing",
+      "description": "As the system, I must block publishing when quality regresses.",
+      "acceptanceCriteria": [
+        "Publish blocked if narrative score below threshold",
+        "Publish blocked if data coverage below threshold",
+        "Override flag logged with reason"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P3-006",
+      "title": "Content templating for distribution",
+      "description": "As the founder, I need consistent templates for Telegram that preserve tone and clarity.",
+      "acceptanceCriteria": [
+        "Templates defined for match clarity and market clarity",
+        "Templates exclude 'lock' language",
+        "Templates support paid add-ons"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P3-007",
+      "title": "Monitoring dashboard for pipeline health",
+      "description": "As the founder, I need visibility into automation reliability.",
+      "acceptanceCriteria": [
+        "Dashboard shows last run status and failures",
+        "Alert on missed publish window",
+        "Run metrics stored for audit"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "P3-008",
+      "title": "Engagement tracking",
+      "description": "As the founder, I need engagement metrics to measure growth.",
+      "acceptanceCriteria": [
+        "Track views/clicks per report",
+        "Track retention by cohort",
+        "Conversion funnel metrics captured"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
