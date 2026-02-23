@@ -24,7 +24,8 @@ _SRC_PATH = _PROJECT_ROOT / "src"
 if str(_SRC_PATH) not in sys.path:
     sys.path.insert(0, str(_SRC_PATH))
 
-from models.feature_builder import FEATURE_COLS
+from models.feature_builder import FEATURE_COLS, build_feature_dataset
+from models import config as model_config
 
 
 @dataclass
@@ -91,6 +92,8 @@ def walk_forward_evaluate(
     predict_rounds: Optional[List[int]] = None,
     C: float = 1.0,
     debug_match_id: Optional[str] = None,
+    feature_cols: Optional[List[str]] = None,
+    quiet: bool = False,
 ) -> Tuple[List[Dict], ProbabilisticEvalResults]:
     """
     Walk-forward evaluation: for each round N, train on rounds < N, predict round N.
@@ -101,10 +104,15 @@ def walk_forward_evaluate(
         predict_rounds: Specific rounds to predict (default: all eligible)
         C: Regularization parameter for LogisticRegression
         debug_match_id: If set, print detailed debug info for this match
+        feature_cols: Override feature columns (default: FEATURE_COLS from feature_builder)
+        quiet: Suppress progress output (useful for benchmark loops)
 
     Returns:
         (predictions_list, eval_results)
     """
+    if feature_cols is None:
+        feature_cols = FEATURE_COLS
+
     all_rounds = sorted(df["round_number"].unique())
     min_round = min(all_rounds)
     max_round = max(all_rounds)
@@ -123,11 +131,12 @@ def walk_forward_evaluate(
             f"available rounds: {all_rounds}"
         )
 
-    print(f"\nWalk-forward: predicting rounds {predict_rounds[0]}-{predict_rounds[-1]}")
-    print(f"  Training starts at R{min_round}, first prediction at R{first_predict}")
-    print(f"  Features: {len(FEATURE_COLS)} columns\n")
+    if not quiet:
+        print(f"\nWalk-forward: predicting rounds {predict_rounds[0]}-{predict_rounds[-1]}")
+        print(f"  Training starts at R{min_round}, first prediction at R{first_predict}")
+        print(f"  Features: {len(feature_cols)} columns\n")
 
-    X_all = df[FEATURE_COLS].values.astype(float)
+    X_all = df[feature_cols].values.astype(float)
     y_all = df["result"].values
 
     predictions: List[Dict] = []
@@ -230,10 +239,10 @@ def walk_forward_evaluate(
                 print(f"  {row['home_team_name']} vs {row['away_team_name']} (R{row['round_number']})")
                 print(f"  Actual: {actual}")
                 print(f"\n  Features BEFORE scaling:")
-                for j, col in enumerate(FEATURE_COLS):
+                for j, col in enumerate(feature_cols):
                     print(f"    {col:30s} = {X_test[i, j]:8.2f}")
                 print(f"\n  Features AFTER scaling:")
-                for j, col in enumerate(FEATURE_COLS):
+                for j, col in enumerate(feature_cols):
                     print(f"    {col:30s} = {X_test_scaled[i, j]:8.4f}")
                 print(f"\n  Probabilities: H={prob_H:.3f}  D={prob_D:.3f}  A={prob_A:.3f}")
                 print(f"  Predicted: {predicted}  Correct: {predicted == actual}")
@@ -323,7 +332,9 @@ def _compute_metrics(
         round_y_true = [p["actual_result"] for p in round_preds]
         round_y_proba = []
         for p in round_preds:
-            round_y_proba.append([p["prob_A"], p["prob_D"], p["prob_H"]])
+            probs = np.array([p["prob_A"], p["prob_D"], p["prob_H"]])
+            probs = probs / probs.sum()  # renormalize after rounding
+            round_y_proba.append(probs.tolist())
 
         round_correct = sum(1 for p in round_preds if p["result_correct"])
 
@@ -377,30 +388,62 @@ def load_market_baseline(
     if df is None:
         return None
 
-    # Match by date + home + away
-    # Normalize team names for matching
-    def _normalize(name: str) -> str:
-        return name.strip().lower().replace(" ", "")
+    # Football-data.co.uk -> FotMob name mapping
+    _CSV_TO_FOTMOB = {
+        "Arsenal": "Arsenal",
+        "Aston Villa": "Aston Villa",
+        "Bournemouth": "AFC Bournemouth",
+        "Brentford": "Brentford",
+        "Brighton": "Brighton & Hove Albion",
+        "Burnley": "Burnley",
+        "Chelsea": "Chelsea",
+        "Crystal Palace": "Crystal Palace",
+        "Everton": "Everton",
+        "Fulham": "Fulham",
+        "Leeds": "Leeds United",
+        "Leicester": "Leicester City",
+        "Liverpool": "Liverpool",
+        "Man City": "Manchester City",
+        "Man United": "Manchester United",
+        "Newcastle": "Newcastle United",
+        "Nott'm Forest": "Nottingham Forest",
+        "Southampton": "Southampton",
+        "Sunderland": "Sunderland",
+        "Spurs": "Tottenham Hotspur",
+        "Tottenham": "Tottenham Hotspur",
+        "West Ham": "West Ham United",
+        "Wolves": "Wolverhampton Wanderers",
+        "Ipswich": "Ipswich Town",
+        "Luton": "Luton Town",
+    }
+
+    # Build odds lookup: (fotmob_home, fotmob_away) -> (prob_H, prob_D, prob_A)
+    odds_lookup: Dict[tuple, tuple] = {}
+    for _, odds_row in odds_df.iterrows():
+        csv_home = str(odds_row["HomeTeam"])
+        csv_away = str(odds_row["AwayTeam"])
+        fotmob_home = _CSV_TO_FOTMOB.get(csv_home, csv_home)
+        fotmob_away = _CSV_TO_FOTMOB.get(csv_away, csv_away)
+        key = (fotmob_home, fotmob_away)
+        odds_lookup[key] = (
+            float(odds_row["prob_H"]),
+            float(odds_row["prob_D"]),
+            float(odds_row["prob_A"]),
+        )
 
     matched_true = []
     matched_proba = []
 
     for _, pred_row in df.iterrows():
-        match_date = str(pred_row["match_date"])[:10]
-        home = _normalize(str(pred_row["home_team_name"]))
-        away = _normalize(str(pred_row["away_team_name"]))
+        home = str(pred_row["home_team_name"])
+        away = str(pred_row["away_team_name"])
+        key = (home, away)
 
-        for _, odds_row in odds_df.iterrows():
-            odds_home = _normalize(str(odds_row["HomeTeam"]))
-            odds_away = _normalize(str(odds_row["AwayTeam"]))
-
-            if odds_home == home and odds_away == away:
-                result = str(pred_row["result"])
-                matched_true.append(result)
-                matched_proba.append(
-                    [odds_row["prob_A"], odds_row["prob_D"], odds_row["prob_H"]]
-                )
-                break
+        if key in odds_lookup:
+            prob_H, prob_D, prob_A = odds_lookup[key]
+            result = str(pred_row["result"])
+            matched_true.append(result)
+            matched_proba.append([prob_A, prob_D, prob_H])
 
     if not matched_true:
         print("No market matches found (team name mismatch?)")
@@ -409,3 +452,225 @@ def load_market_baseline(
     market_ll = float(log_loss(matched_true, matched_proba, labels=["A", "D", "H"]))
     print(f"Market baseline: {len(matched_true)}/{len(df)} matches matched, log_loss={market_ll:.4f}")
     return market_ll
+
+
+def _compute_drivers(
+    model: LogisticRegression,
+    scaler: StandardScaler,
+    x_raw: np.ndarray,
+    feature_cols: List[str],
+    predicted_class: str,
+    top_n: int = 5,
+) -> List[Dict]:
+    """
+    Compute numerical drivers for a single prediction.
+
+    Uses coef * scaled_value to get each feature's contribution to the
+    predicted class in log-odds space. Returns top_n features sorted by
+    absolute contribution.
+    """
+    class_idx = {cls: i for i, cls in enumerate(model.classes_)}
+    pred_idx = class_idx[predicted_class]
+    coefs = model.coef_[pred_idx]  # shape: (n_features,)
+
+    x_scaled = scaler.transform(x_raw.reshape(1, -1))[0]
+    contributions = coefs * x_scaled  # per-feature contribution to log-odds
+
+    drivers = []
+    for j in range(len(feature_cols)):
+        drivers.append({
+            "feature": feature_cols[j],
+            "value": round(float(x_raw[j]), 3),
+            "contribution": round(float(contributions[j]), 4),
+            "direction": "for" if contributions[j] > 0 else "against",
+        })
+
+    # Sort by absolute contribution, descending
+    drivers.sort(key=lambda d: abs(d["contribution"]), reverse=True)
+    return drivers[:top_n]
+
+
+def _classify_confidence(entropy_norm: float, margin_top2: float) -> str:
+    """Derive confidence label from entropy and margin (no LLM)."""
+    if entropy_norm < 0.85 and margin_top2 > 0.15:
+        return "high"
+    if entropy_norm < 0.95 and margin_top2 > 0.08:
+        return "medium"
+    return "low"
+
+
+def _compute_risk_flags(pred: Dict) -> List[str]:
+    """Derive risk flags from prediction metadata."""
+    flags = []
+    if pred.get("elo_missing_any"):
+        flags.append("elo_missing")
+    if pred["entropy_norm"] > 0.98:
+        flags.append("near_uniform")
+    if pred["margin_top2"] < 0.05:
+        flags.append("tight_margin")
+    if pred["train_size"] < 80:
+        flags.append("small_training_set")
+    return flags
+
+
+def build_match_report(pred: Dict, drivers: List[Dict]) -> Dict:
+    """
+    Build the official match report JSON for the renderer.
+
+    This is the stable contract between the probabilistic motor and the
+    LLM renderer. All fields are derived from model output — no LLM invention.
+    """
+    confidence = _classify_confidence(pred["entropy_norm"], pred["margin_top2"])
+    risk_flags = _compute_risk_flags(pred)
+
+    return {
+        "schema_version": "1.0",
+        "model_version": model_config.MODEL_VERSION,
+        "fixture": {
+            "fixture_id": pred["fixture_id"],
+            "round_number": pred["round_number"],
+            "match_date": pred["match_date"],
+            "home_team": pred["home_team"],
+            "away_team": pred["away_team"],
+        },
+        "probabilities": {
+            "home_win": pred["prob_H"],
+            "draw": pred["prob_D"],
+            "away_win": pred["prob_A"],
+        },
+        "prediction": {
+            "predicted_result": pred["predicted_result"],
+            "confidence": confidence,
+            "p_max": pred["p_max"],
+            "margin_top2": pred["margin_top2"],
+            "entropy_norm": pred["entropy_norm"],
+        },
+        "drivers": drivers,
+        "risk_flags": risk_flags,
+        "metadata": {
+            "train_size": pred["train_size"],
+            "train_rounds": pred.get("train_rounds", []),
+            "feature_subset": model_config.FEATURE_COLS,
+            "C": model_config.C,
+        },
+    }
+
+
+def predict_round(
+    target_round: int,
+    df: Optional[pd.DataFrame] = None,
+    conn=None,
+    allow_missing_elo: bool = False,
+) -> List[Dict]:
+    """
+    Predict a single round using the frozen v1.1 config.
+
+    Trains on all rounds < target_round, predicts target_round.
+    Returns list of match report dicts (the official schema).
+
+    For future rounds (no actual_result), actual_result will be None.
+    """
+    feature_cols = model_config.FEATURE_COLS
+    C = model_config.C
+
+    if df is None:
+        df = build_feature_dataset(conn=conn, allow_missing_elo=allow_missing_elo)
+
+    all_rounds = sorted(df["round_number"].unique())
+
+    # Training data: all completed rounds before target
+    train_mask = df["round_number"].values < target_round
+    X_train = df.loc[train_mask, feature_cols].values.astype(float)
+    y_train = df.loc[train_mask, "result"].values
+
+    if len(X_train) < 20:
+        raise ValueError(
+            f"Only {len(X_train)} training samples for R{target_round}. "
+            f"Need at least 20."
+        )
+
+    # Test data: target round
+    test_mask = df["round_number"].values == target_round
+    test_df = df[test_mask].reset_index(drop=True)
+    X_test = test_df[feature_cols].values.astype(float)
+
+    if len(X_test) == 0:
+        raise ValueError(f"No matches found for round {target_round}")
+
+    # Fill NaN
+    X_train = np.nan_to_num(X_train, nan=0.0)
+    X_test = np.nan_to_num(X_test, nan=0.0)
+
+    # Fit scaler + model
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    model = LogisticRegression(
+        solver="lbfgs",
+        C=C,
+        max_iter=1000,
+        random_state=model_config.RANDOM_STATE,
+        class_weight=None,
+    )
+    model.fit(X_train_scaled, y_train)
+
+    probas = model.predict_proba(X_test_scaled)
+    class_idx = {cls: i for i, cls in enumerate(model.classes_)}
+    train_rounds_list = sorted(df.loc[train_mask, "round_number"].unique().tolist())
+
+    reports = []
+    for i in range(len(test_df)):
+        row = test_df.iloc[i]
+        prob_H = float(probas[i, class_idx["H"]])
+        prob_D = float(probas[i, class_idx["D"]])
+        prob_A = float(probas[i, class_idx["A"]])
+        predicted = model.classes_[np.argmax(probas[i])]
+
+        p_max, margin_top2, entropy_norm = _compute_margin_entropy(probas[i])
+
+        # Actual result (None for future rounds)
+        has_result = pd.notna(row.get("result"))
+        actual = str(row["result"]) if has_result else None
+
+        pred = {
+            "fixture_id": str(row["fotmob_match_id"]),
+            "round_number": int(row["round_number"]),
+            "match_date": str(row["match_date"])[:10],
+            "home_team": row["home_team_name"],
+            "away_team": row["away_team_name"],
+            "prob_H": round(prob_H, 4),
+            "prob_D": round(prob_D, 4),
+            "prob_A": round(prob_A, 4),
+            "predicted_result": predicted,
+            "actual_result": actual,
+            "result_correct": predicted == actual if actual else None,
+            "p_max": round(p_max, 4),
+            "margin_top2": round(margin_top2, 4),
+            "entropy_norm": round(entropy_norm, 4),
+            "train_size": int(len(X_train)),
+            "train_rounds": train_rounds_list,
+            "elo_missing_any": bool(row.get("elo_missing_any", 0)),
+        }
+
+        # Compute drivers
+        drivers = _compute_drivers(
+            model, scaler, X_test[i], feature_cols, predicted, top_n=5,
+        )
+
+        report = build_match_report(pred, drivers)
+
+        # Add actual result at top level for backtest convenience
+        if actual:
+            report["actual_result"] = actual
+            report["result_correct"] = predicted == actual
+
+        reports.append(report)
+
+    # Sanity checks
+    for r in reports:
+        p = r["probabilities"]
+        total = p["home_win"] + p["draw"] + p["away_win"]
+        assert abs(total - 1.0) < 0.01, f"Probs sum to {total} for {r['fixture']['fixture_id']}"
+
+    return reports

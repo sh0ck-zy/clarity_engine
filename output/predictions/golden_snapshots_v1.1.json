@@ -1,0 +1,259 @@
+{
+  "HIGH CONFIDENCE (correct)": {
+    "report": {
+      "schema_version": "1.0",
+      "model_version": "v1.1",
+      "fixture": {
+        "fixture_id": "4813477",
+        "round_number": 11,
+        "match_date": "2025-11-08",
+        "home_team": "Chelsea",
+        "away_team": "Wolverhampton Wanderers"
+      },
+      "probabilities": {
+        "home_win": 0.6447,
+        "draw": 0.1977,
+        "away_win": 0.1576
+      },
+      "prediction": {
+        "predicted_result": "H",
+        "confidence": "high",
+        "p_max": 0.6447,
+        "margin_top2": 0.447,
+        "entropy_norm": 0.8143
+      },
+      "drivers": [
+        {
+          "feature": "goal_diff_season_delta",
+          "value": 22.0,
+          "contribution": 0.1654,
+          "direction": "for"
+        },
+        {
+          "feature": "elo_delta",
+          "value": 215.884,
+          "contribution": 0.1258,
+          "direction": "for"
+        },
+        {
+          "feature": "home_venue_points",
+          "value": 7.0,
+          "contribution": 0.0435,
+          "direction": "for"
+        },
+        {
+          "feature": "form_points_delta",
+          "value": 7.0,
+          "contribution": 0.0208,
+          "direction": "for"
+        },
+        {
+          "feature": "xg_diff_last5_delta",
+          "value": 1.26,
+          "contribution": 0.014,
+          "direction": "for"
+        }
+      ],
+      "risk_flags": [],
+      "metadata": {
+        "train_size": 90,
+        "train_rounds": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "feature_subset": [
+          "xg_diff_last5_delta",
+          "form_points_delta",
+          "goal_diff_season_delta",
+          "position_delta",
+          "elo_delta",
+          "home_venue_points",
+          "away_venue_points"
+        ],
+        "C": 0.01
+      },
+      "actual_result": "H",
+      "result_correct": true
+    },
+    "telegram": "R11 | Chelsea vs Wolverhampton Wanderers\nH 64.5%  D 19.8%  A 15.8%\nStrong lean: Home Win\nKey factors: Goal diff gap (+22.0), ELO rating gap (+215.9), Home ground strength (+7.0)\n[v1.1]",
+    "x_post": "R11 Chelsea vs Wolves\nH 64.5% D 19.8% A 15.8%\nStrong lean: Home Win\nDriver: Goal diff gap\n[v1.1]"
+  },
+  "MEDIUM CONFIDENCE (miss)": {
+    "report": {
+      "schema_version": "1.0",
+      "model_version": "v1.1",
+      "fixture": {
+        "fixture_id": "4813447",
+        "round_number": 8,
+        "match_date": "2025-10-18",
+        "home_team": "Crystal Palace",
+        "away_team": "AFC Bournemouth"
+      },
+      "probabilities": {
+        "home_win": 0.5167,
+        "draw": 0.2459,
+        "away_win": 0.2373
+      },
+      "prediction": {
+        "predicted_result": "H",
+        "confidence": "medium",
+        "p_max": 0.5167,
+        "margin_top2": 0.2708,
+        "entropy_norm": 0.9353
+      },
+      "drivers": [
+        {
+          "feature": "xg_diff_last5_delta",
+          "value": 3.08,
+          "contribution": 0.0613,
+          "direction": "for"
+        },
+        {
+          "feature": "elo_delta",
+          "value": 25.674,
+          "contribution": 0.0083,
+          "direction": "for"
+        },
+        {
+          "feature": "goal_diff_season_delta",
+          "value": 1.0,
+          "contribution": 0.0063,
+          "direction": "for"
+        },
+        {
+          "feature": "away_venue_points",
+          "value": 4.0,
+          "contribution": 0.006,
+          "direction": "for"
+        },
+        {
+          "feature": "form_points_delta",
+          "value": -1.0,
+          "contribution": 0.0022,
+          "direction": "for"
+        }
+      ],
+      "risk_flags": [
+        "small_training_set"
+      ],
+      "metadata": {
+        "train_size": 60,
+        "train_rounds": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "feature_subset": [
+          "xg_diff_last5_delta",
+          "form_points_delta",
+          "goal_diff_season_delta",
+          "position_delta",
+          "elo_delta",
+          "home_venue_points",
+          "away_venue_points"
+        ],
+        "C": 0.01
+      },
+      "actual_result": "D",
+      "result_correct": false
+    },
+    "telegram": "R8 | Crystal Palace vs AFC Bournemouth\nH 51.7%  D 24.6%  A 23.7%\nModerate lean: Home Win\nKey factors: xG advantage (last 5) (+3.1), ELO rating gap (+25.7), Goal diff gap (+1.0)\nNote: Limited training data available\n[v1.1]",
+    "x_post": "R8 C. Palace vs Bournemouth\nH 51.7% D 24.6% A 23.7%\nModerate lean: Home Win\nDriver: xG advantage (last 5)\n[v1.1]"
+  },
+  "FLAGGED (risk flags)": {
+    "report": {
+      "schema_version": "1.0",
+      "model_version": "v1.1",
+      "fixture": {
+        "fixture_id": "4813446",
+        "round_number": 8,
+        "match_date": "2025-10-18",
+        "home_team": "Burnley",
+        "away_team": "Leeds United"
+      },
+      "probabilities": {
+        "home_win": 0.4148,
+        "draw": 0.2696,
+        "away_win": 0.3156
+      },
+      "prediction": {
+        "predicted_result": "H",
+        "confidence": "low",
+        "p_max": 0.4148,
+        "margin_top2": 0.0992,
+        "entropy_norm": 0.9852
+      },
+      "drivers": [
+        {
+          "feature": "xg_diff_last5_delta",
+          "value": -8.62,
+          "contribution": -0.1732,
+          "direction": "against"
+        },
+        {
+          "feature": "goal_diff_season_delta",
+          "value": -4.0,
+          "contribution": -0.0162,
+          "direction": "against"
+        },
+        {
+          "feature": "elo_delta",
+          "value": -21.359,
+          "contribution": -0.0151,
+          "direction": "against"
+        },
+        {
+          "feature": "form_points_delta",
+          "value": -4.0,
+          "contribution": 0.0121,
+          "direction": "for"
+        },
+        {
+          "feature": "away_venue_points",
+          "value": 3.0,
+          "contribution": 0.0034,
+          "direction": "for"
+        }
+      ],
+      "risk_flags": [
+        "near_uniform",
+        "small_training_set"
+      ],
+      "metadata": {
+        "train_size": 60,
+        "train_rounds": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "feature_subset": [
+          "xg_diff_last5_delta",
+          "form_points_delta",
+          "goal_diff_season_delta",
+          "position_delta",
+          "elo_delta",
+          "home_venue_points",
+          "away_venue_points"
+        ],
+        "C": 0.01
+      },
+      "actual_result": "H",
+      "result_correct": true
+    },
+    "telegram": "R8 | Burnley vs Leeds United\nH 41.5%  D 27%  A 31.6%\nTight call: Home Win\nKey factors: xG advantage (last 5) (-8.6, working against), Goal diff gap (-4.0, working against), ELO rating gap (-21.4, working against)\nNote: Model sees this as a coin flip | Limited training data available\n[v1.1]",
+    "x_post": "R8 Burnley vs Leeds\nH 41.5% D 27% A 31.6%\nTight call: Home Win\nDriver: xG advantage (last 5)\nCoin flip territory\n[v1.1]"
+  }
+}
