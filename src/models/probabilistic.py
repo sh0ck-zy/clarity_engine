@@ -6,6 +6,7 @@ Produces calibrated P(H/D/A) per match from team_states feature vectors.
 
 from __future__ import annotations
 
+import hashlib
 import math
 import sys
 from dataclasses import dataclass, field
@@ -513,6 +514,12 @@ def _compute_risk_flags(pred: Dict) -> List[str]:
     return flags
 
 
+def _make_report_id(fixture_id: str, model_version: str, prob_H: float) -> str:
+    """Deterministic short hash for audit trail: fixture + model + probs."""
+    raw = f"{fixture_id}:{model_version}:{prob_H:.4f}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:10]
+
+
 def build_match_report(pred: Dict, drivers: List[Dict]) -> Dict:
     """
     Build the official match report JSON for the renderer.
@@ -522,8 +529,12 @@ def build_match_report(pred: Dict, drivers: List[Dict]) -> Dict:
     """
     confidence = _classify_confidence(pred["entropy_norm"], pred["margin_top2"])
     risk_flags = _compute_risk_flags(pred)
+    report_id = _make_report_id(
+        pred["fixture_id"], model_config.MODEL_VERSION, pred["prob_H"]
+    )
 
     return {
+        "report_id": report_id,
         "schema_version": "1.0",
         "model_version": model_config.MODEL_VERSION,
         "fixture": {

@@ -11,6 +11,7 @@ Guardrails:
     - Confidence label comes from report["prediction"]["confidence"]
     - Risk flags modulate language tone (hedging, caveats)
     - No scoreline predictions (optional illustrative only)
+    - No causality language ("will", "guaranteed", "certain")
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ from typing import Dict, List, Optional
 # ---------------------------------------------------------------------------
 
 _REQUIRED_FIELDS = {
+    "report_id",
     "schema_version",
     "model_version",
     "fixture",
@@ -36,6 +38,12 @@ _REQUIRED_FIELDS = {
 _REQUIRED_FIXTURE = {"fixture_id", "round_number", "match_date", "home_team", "away_team"}
 _REQUIRED_PROBS = {"home_win", "draw", "away_win"}
 _REQUIRED_PRED = {"predicted_result", "confidence", "p_max", "margin_top2", "entropy_norm"}
+
+# Words that imply certainty — renderer must never output these
+_BANNED_WORDS = {
+    "guaranteed", "certain", "definitely", "surely", "undoubtedly",
+    "will win", "will lose", "must win", "no chance", "impossible",
+}
 
 
 class ReportValidationError(ValueError):
@@ -100,6 +108,58 @@ def validate_report(report: Dict) -> None:
             raise ReportValidationError(f"Invalid driver direction: {d['direction']}")
 
 
+def validate_rendered_text(text: str) -> None:
+    """Post-render guardrail: check for banned causality language."""
+    text_lower = text.lower()
+    for word in _BANNED_WORDS:
+        if word in text_lower:
+            raise ReportValidationError(
+                f"Rendered text contains banned causality word: '{word}'"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Editorial policy
+# ---------------------------------------------------------------------------
+
+def classify_editorial(report: Dict) -> str:
+    """
+    Classify a report for editorial decision.
+
+    Returns:
+        "publish"   — strong enough signal to post as a pick
+        "watchlist" — interesting game but weak signal, post as 'game to watch'
+        "skip"      — too uncertain or data-incomplete, don't publish externally
+    """
+    flags = report["risk_flags"]
+    pred = report["prediction"]
+    confidence = pred["confidence"]
+
+    # Hard skip: missing data
+    if "elo_missing" in flags:
+        return "skip"
+
+    # Near-uniform: model has no opinion
+    if "near_uniform" in flags:
+        return "skip"
+
+    # High confidence: always publish
+    if confidence == "high":
+        return "publish"
+
+    # Medium confidence: publish unless tight margin
+    if confidence == "medium":
+        if "tight_margin" in flags:
+            return "watchlist"
+        return "publish"
+
+    # Low confidence: watchlist if margin > 0.05, skip otherwise
+    if pred["margin_top2"] > 0.05:
+        return "watchlist"
+
+    return "skip"
+
+
 # ---------------------------------------------------------------------------
 # Formatting helpers
 # ---------------------------------------------------------------------------
@@ -120,6 +180,7 @@ _FEATURE_DISPLAY = {
     "xg_against_last5_delta": "xG defence gap (last 5)",
 }
 
+# Tone varies by confidence — no causality, only signals/profiles
 _CONFIDENCE_TONE = {
     "high": "Strong lean",
     "medium": "Moderate lean",
@@ -132,6 +193,9 @@ _FLAG_CAVEATS = {
     "tight_margin": "Very slim margin between outcomes",
     "small_training_set": "Limited training data available",
 }
+
+# Watchlist uses different framing
+_WATCHLIST_TONE = "Game to watch"
 
 
 def _fmt_pct(p: float) -> str:
@@ -158,21 +222,35 @@ def _build_caveat(flags: List[str]) -> Optional[str]:
     """Build caveat text from risk flags."""
     if not flags:
         return None
-    parts = [_FLAG_CAVEATS.get(f, f) for f in flags]
+    # Filter out internal-only flags
+    external_flags = [f for f in flags if f != "small_training_set"]
+    if not external_flags:
+        return None
+    parts = [_FLAG_CAVEATS.get(f, f) for f in external_flags]
     return " | ".join(parts)
+
+
+def _audit_footer(report: Dict) -> str:
+    """Build audit footer: version | report_id."""
+    rid = report.get("report_id", "???")
+    return f"[{report['model_version']} | {rid}]"
 
 
 # ---------------------------------------------------------------------------
 # Telegram renderer
 # ---------------------------------------------------------------------------
 
-def render_telegram_post(report: Dict) -> str:
+def render_telegram_post(report: Dict, editorial: Optional[str] = None) -> str:
     """
     Render a match report as a Telegram message.
 
     Format: ~300-500 chars, structured, all data from report JSON.
+    If editorial is provided, it overrides the auto-classification.
     """
     validate_report(report)
+
+    if editorial is None:
+        editorial = classify_editorial(report)
 
     f = report["fixture"]
     p = report["probabilities"]
@@ -192,10 +270,13 @@ def render_telegram_post(report: Dict) -> str:
         f"H {_fmt_pct(p['home_win'])}  D {_fmt_pct(p['draw'])}  A {_fmt_pct(p['away_win'])}"
     )
 
-    # Prediction line
+    # Prediction line — tone depends on editorial classification
     result_label = _RESULT_LABELS[pred["predicted_result"]]
-    tone = _CONFIDENCE_TONE[pred["confidence"]]
-    lines.append(f"{tone}: {result_label}")
+    if editorial == "watchlist":
+        lines.append(f"{_WATCHLIST_TONE}: {result_label} profile")
+    else:
+        tone = _CONFIDENCE_TONE[pred["confidence"]]
+        lines.append(f"{tone}: {result_label}")
 
     # Drivers (top 3)
     if drivers:
@@ -203,28 +284,33 @@ def render_telegram_post(report: Dict) -> str:
         driver_parts = [_driver_text(d) for d in top]
         lines.append(f"Key factors: {', '.join(driver_parts)}")
 
-    # Caveat from risk flags
+    # Caveat from risk flags (external-facing only)
     caveat = _build_caveat(flags)
     if caveat:
         lines.append(f"Note: {caveat}")
 
-    # Footer
-    lines.append(f"[{report['model_version']}]")
+    # Audit footer
+    lines.append(_audit_footer(report))
 
-    return "\n".join(lines)
+    text = "\n".join(lines)
+    validate_rendered_text(text)
+    return text
 
 
 # ---------------------------------------------------------------------------
 # X (Twitter) renderer
 # ---------------------------------------------------------------------------
 
-def render_x_post(report: Dict) -> str:
+def render_x_post(report: Dict, editorial: Optional[str] = None) -> str:
     """
     Render a match report as an X/Twitter post.
 
     Format: under 280 chars, dense, all data from report JSON.
     """
     validate_report(report)
+
+    if editorial is None:
+        editorial = classify_editorial(report)
 
     f = report["fixture"]
     p = report["probabilities"]
@@ -240,14 +326,19 @@ def render_x_post(report: Dict) -> str:
     away_short = _shorten_team(away)
 
     result_label = _RESULT_LABELS[pred["predicted_result"]]
-    tone = _CONFIDENCE_TONE[pred["confidence"]]
 
     # Core line
     parts = [
         f"R{f['round_number']} {home_short} vs {away_short}",
         f"H {_fmt_pct(p['home_win'])} D {_fmt_pct(p['draw'])} A {_fmt_pct(p['away_win'])}",
-        f"{tone}: {result_label}",
     ]
+
+    # Tone depends on editorial
+    if editorial == "watchlist":
+        parts.append(f"{_WATCHLIST_TONE}: {result_label} profile")
+    else:
+        tone = _CONFIDENCE_TONE[pred["confidence"]]
+        parts.append(f"{tone}: {result_label}")
 
     # Top driver (just one for brevity)
     if drivers:
@@ -259,17 +350,18 @@ def render_x_post(report: Dict) -> str:
     if "near_uniform" in flags or "tight_margin" in flags:
         parts.append("Coin flip territory")
 
-    parts.append(f"[{report['model_version']}]")
+    parts.append(_audit_footer(report))
 
     text = "\n".join(parts)
 
     # Truncation guard
     if len(text) > 280:
-        # Drop driver line and try again
         parts = [p for p in parts if not p.startswith("Driver:")]
         text = "\n".join(parts)
 
-    return text[:280]
+    text = text[:280]
+    validate_rendered_text(text)
+    return text
 
 
 # ---------------------------------------------------------------------------
@@ -302,16 +394,26 @@ def _shorten_team(name: str) -> str:
 # Batch rendering
 # ---------------------------------------------------------------------------
 
-def render_round_telegram(reports: List[Dict]) -> str:
-    """Render all match reports for a round as a single Telegram message."""
+def render_round_telegram(reports: List[Dict], include_skipped: bool = False) -> str:
+    """
+    Render match reports for a round as a single Telegram message.
+
+    Applies editorial policy: only includes 'publish' and 'watchlist' by default.
+    """
     if not reports:
         return ""
 
     round_num = reports[0]["fixture"]["round_number"]
-    header = f"Premier League Round {round_num} Predictions\n{'='*35}\n"
+    header = f"Premier League Round {round_num}\n{'='*35}\n"
 
     posts = []
     for report in reports:
-        posts.append(render_telegram_post(report))
+        editorial = classify_editorial(report)
+        if editorial == "skip" and not include_skipped:
+            continue
+        posts.append(render_telegram_post(report, editorial=editorial))
+
+    if not posts:
+        return header + "(No publishable predictions for this round)"
 
     return header + "\n\n".join(posts)
