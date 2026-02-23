@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2026-02-12_Brentford_Arsenal",
+  "home_team": "Brentford",
+  "away_team": "Arsenal",
+  "round_number": 26,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-3",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6459,
+  "time_seconds": 7.6913981437683105,
+  "model": "gpt-4o-mini"
+}

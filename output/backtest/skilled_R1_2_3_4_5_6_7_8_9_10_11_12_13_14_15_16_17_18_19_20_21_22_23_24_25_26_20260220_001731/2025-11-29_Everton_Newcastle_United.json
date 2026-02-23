@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-11-29_Everton_Newcastle_United",
+  "home_team": "Everton",
+  "away_team": "Newcastle United",
+  "round_number": 13,
+  "predicted_result": "D",
+  "predicted_scoreline": "1-1",
+  "home_win_prob": 0.24750000000000003,
+  "draw_prob": 0.55,
+  "away_win_prob": 0.2025,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6280,
+  "time_seconds": 12.956921815872192,
+  "model": "gpt-4o-mini"
+}

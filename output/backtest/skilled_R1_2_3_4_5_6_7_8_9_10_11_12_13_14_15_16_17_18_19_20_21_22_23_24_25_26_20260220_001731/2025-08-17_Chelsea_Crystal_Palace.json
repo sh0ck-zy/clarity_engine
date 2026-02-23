@@ -1,0 +1,32 @@
+{
+  "fixture_id": "2025-08-17_Chelsea_Crystal_Palace",
+  "home_team": "Chelsea",
+  "away_team": "Crystal Palace",
+  "round_number": 1,
+  "predicted_result": "D",
+  "predicted_scoreline": "1-1",
+  "home_win_prob": 0.24750000000000003,
+  "draw_prob": 0.55,
+  "away_win_prob": 0.2025,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 11190,
+  "time_seconds": 18.878355979919434,
+  "model": "gpt-4o-mini"
+}

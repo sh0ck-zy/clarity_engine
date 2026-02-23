@@ -1,0 +1,28 @@
+{
+  "fixture_id": "2026-01-01_Liverpool_Leeds_United",
+  "home_team": "Liverpool",
+  "away_team": "Leeds United",
+  "round_number": 19,
+  "predicted_result": "H",
+  "predicted_scoreline": "3-1",
+  "home_win_prob": 0.7,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.18,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 7004,
+  "time_seconds": 13.466803073883057,
+  "model": "gpt-4o-mini"
+}

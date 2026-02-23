@@ -1,0 +1,28 @@
+{
+  "fixture_id": "2025-08-16_Wolverhampton_Wanderers_Manchester_City",
+  "home_team": "Wolverhampton Wanderers",
+  "away_team": "Manchester City",
+  "round_number": 1,
+  "predicted_result": null,
+  "predicted_scoreline": null,
+  "home_win_prob": null,
+  "draw_prob": null,
+  "away_win_prob": null,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_team_form",
+    "get_team_form"
+  ],
+  "tokens_used": 4790,
+  "time_seconds": 11.416912078857422,
+  "model": "gpt-4o-mini"
+}

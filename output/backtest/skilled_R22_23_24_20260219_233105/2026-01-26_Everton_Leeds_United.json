@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-01-26_Everton_Leeds_United",
+  "home_team": "Everton",
+  "away_team": "Leeds United",
+  "round_number": 23,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_key_players",
+    "get_key_players",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info",
+    "get_h2h"
+  ],
+  "tokens_used": 8757,
+  "time_seconds": 16.032296895980835,
+  "model": "gpt-5.2"
+}

@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-08-31_Aston_Villa_Crystal_Palace",
+  "home_team": "Aston Villa",
+  "away_team": "Crystal Palace",
+  "round_number": 3,
+  "predicted_result": "D",
+  "predicted_scoreline": "0-0",
+  "home_win_prob": 0.24750000000000003,
+  "draw_prob": 0.55,
+  "away_win_prob": 0.2025,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 5997,
+  "time_seconds": 13.508838891983032,
+  "model": "gpt-4o-mini"
+}

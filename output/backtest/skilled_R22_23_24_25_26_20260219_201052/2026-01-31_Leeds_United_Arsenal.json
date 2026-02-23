@@ -1,0 +1,16 @@
+{
+  "fixture_id": "2026-01-31_Leeds_United_Arsenal",
+  "home_team": "Leeds United",
+  "away_team": "Arsenal",
+  "round_number": 24,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-3",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [],
+  "tokens_used": 6587,
+  "time_seconds": 9.112979888916016,
+  "model": "gpt-4o-mini"
+}

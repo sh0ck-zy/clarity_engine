@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2026-01-07_Manchester_City_Brighton_&_Hove_Albion",
+  "home_team": "Manchester City",
+  "away_team": "Brighton & Hove Albion",
+  "round_number": 21,
+  "predicted_result": "H",
+  "predicted_scoreline": "3-1",
+  "home_win_prob": 0.7,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.18,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6660,
+  "time_seconds": 9.73688006401062,
+  "model": "gpt-4o-mini"
+}

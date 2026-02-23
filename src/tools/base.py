@@ -265,3 +265,69 @@ def describe_position(position: int, played: int) -> str:
         return f"#{position} - Relegation battle"
     else:
         return f"#{position} - Mid-table"
+
+
+# ============================================================================
+# Manager-aware utilities
+# ============================================================================
+
+def get_current_manager_info(team_id: int) -> Optional[Dict[str, Any]]:
+    """Get current manager's info including when they started."""
+    with db_cursor() as cur:
+        cur.execute("""
+            SELECT manager_name, first_match_round, last_match_round, 
+                   matches, wins, draws, losses
+            FROM manager_history 
+            WHERE team_id = %s AND is_current = true
+            LIMIT 1
+        """, (team_id,))
+        row = cur.fetchone()
+        if row:
+            return row_to_dict(row)
+    return None
+
+
+def get_formation_under_current_manager(team_id: int, round_number: int) -> Optional[str]:
+    """
+    Get the primary formation used under the current manager.
+    
+    Returns the most common formation since the current manager took charge,
+    or the last 5 games if manager started recently.
+    """
+    with db_cursor() as cur:
+        # Get when current manager started
+        cur.execute("""
+            SELECT first_match_round 
+            FROM manager_history 
+            WHERE team_id = %s AND is_current = true
+            LIMIT 1
+        """, (team_id,))
+        row = cur.fetchone()
+        
+        if row:
+            manager_start_round = row["first_match_round"]
+        else:
+            # No manager info, use last 5 rounds
+            manager_start_round = max(1, round_number - 4)
+        
+        # Get formations since manager started (up to current round)
+        cur.execute("""
+            SELECT 
+                CASE WHEN home_team_id = %s THEN formation_home ELSE formation_away END as formation
+            FROM fotmob_matches
+            WHERE (home_team_id = %s OR away_team_id = %s)
+              AND round_number >= %s
+              AND round_number <= %s
+              AND status = 'finished'
+            ORDER BY round_number DESC
+        """, (team_id, team_id, team_id, manager_start_round, round_number))
+        
+        formations = [r["formation"] for r in cur.fetchall() if r["formation"]]
+        
+        if not formations:
+            return None
+        
+        # Return most common formation under this manager
+        from collections import Counter
+        formation_counts = Counter(formations)
+        return formation_counts.most_common(1)[0][0]

@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2025-11-08_West_Ham_United_Burnley",
+  "home_team": "West Ham United",
+  "away_team": "Burnley",
+  "round_number": 11,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_h2h"
+  ],
+  "tokens_used": 9840,
+  "time_seconds": 29.511425018310547,
+  "model": "gpt-5-mini"
+}

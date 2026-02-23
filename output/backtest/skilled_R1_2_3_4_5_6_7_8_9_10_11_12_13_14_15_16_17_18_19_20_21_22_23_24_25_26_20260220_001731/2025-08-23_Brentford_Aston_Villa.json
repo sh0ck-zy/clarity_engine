@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-08-23_Brentford_Aston_Villa",
+  "home_team": "Brentford",
+  "away_team": "Aston Villa",
+  "round_number": 2,
+  "predicted_result": "H",
+  "predicted_scoreline": "1-0",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5356,
+  "time_seconds": 12.955256223678589,
+  "model": "gpt-4o-mini"
+}

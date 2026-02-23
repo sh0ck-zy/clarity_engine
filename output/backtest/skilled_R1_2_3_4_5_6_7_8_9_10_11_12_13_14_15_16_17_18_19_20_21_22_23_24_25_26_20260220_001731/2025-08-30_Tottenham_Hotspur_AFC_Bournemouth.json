@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-08-30_Tottenham_Hotspur_AFC_Bournemouth",
+  "home_team": "Tottenham Hotspur",
+  "away_team": "AFC Bournemouth",
+  "round_number": 3,
+  "predicted_result": "H",
+  "predicted_scoreline": "3-1",
+  "home_win_prob": 0.7,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.18,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6118,
+  "time_seconds": 15.656437873840332,
+  "model": "gpt-4o-mini"
+}

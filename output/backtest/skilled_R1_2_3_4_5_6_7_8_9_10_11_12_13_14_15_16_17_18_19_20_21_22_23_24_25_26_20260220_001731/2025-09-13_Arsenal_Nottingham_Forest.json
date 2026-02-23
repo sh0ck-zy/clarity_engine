@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-09-13_Arsenal_Nottingham_Forest",
+  "home_team": "Arsenal",
+  "away_team": "Nottingham Forest",
+  "round_number": 4,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-0",
+  "home_win_prob": 0.7,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.18,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6163,
+  "time_seconds": 15.35154104232788,
+  "model": "gpt-4o-mini"
+}

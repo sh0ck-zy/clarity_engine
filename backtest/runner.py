@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 from src.agents.base import AnalysisReport
 from src.agents.coded import CodedAgent
 from src.agents.openclaw import OpenClawAgent
+from src.agents.skilled import SkilledAgent
 
 from .fixtures import get_round_fixtures, get_fixtures_range, Fixture
 from .reality import get_round_realities, get_match_reality
@@ -37,14 +38,17 @@ class BacktestRunner:
         self,
         output_dir: str = "output/backtest",
         max_workers: int = 3,
+        model: str = "gpt-4o-mini",
     ):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.max_workers = max_workers
+        self.model = model
         
         # Initialize agents
         self.coded_agent = CodedAgent()
         self.openclaw_agent = OpenClawAgent()
+        self.skilled_agent = SkilledAgent(model=model)
     
     def run(
         self,
@@ -92,6 +96,8 @@ class BacktestRunner:
                 reports = self._run_coded(fixtures, parallel)
             elif method == "openclaw":
                 reports = self._run_openclaw(fixtures, parallel)
+            elif method == "skilled":
+                reports = self._run_skilled(fixtures, parallel)
             else:
                 print(f"Unknown method: {method}")
                 continue
@@ -177,7 +183,9 @@ class BacktestRunner:
         match_date,
     ) -> AnalysisReport:
         """Run single coded analysis."""
-        return self.coded_agent.analyze(
+        # Create NEW agent per call to avoid race conditions in parallel execution
+        agent = CodedAgent()
+        return agent.analyze(
             home_team=home_team_id,
             away_team=away_team_id,
             round_number=round_number,
@@ -241,7 +249,75 @@ class BacktestRunner:
         match_date,
     ) -> AnalysisReport:
         """Run single OpenClaw analysis."""
-        return self.openclaw_agent.analyze(
+        # Create NEW agent per call to avoid race conditions in parallel execution
+        agent = OpenClawAgent()
+        return agent.analyze(
+            home_team=home_team_id,
+            away_team=away_team_id,
+            round_number=round_number,
+            match_date=match_date,
+            backtest_mode=True,
+        )
+    
+    def _run_skilled(
+        self,
+        fixtures: List[Fixture],
+        parallel: bool = True,
+    ) -> List[AnalysisReport]:
+        """Run Skilled agent (with SKILL.md) on all fixtures."""
+        
+        reports = []
+        
+        if parallel and len(fixtures) > 1:
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                futures = {
+                    executor.submit(
+                        self._analyze_skilled,
+                        f.home_team_id,
+                        f.away_team_id,
+                        f.round_number,
+                        f.match_date,
+                    ): f
+                    for f in fixtures
+                }
+                
+                for future in as_completed(futures):
+                    fixture = futures[future]
+                    try:
+                        report = future.result()
+                        reports.append(report)
+                        mark = "✓" if report.predicted_result else "?"
+                        print(f"  {mark} {fixture.home_team} vs {fixture.away_team}: {report.predicted_result or '?'} ({report.time_seconds:.1f}s, {len(report.tools_used)} tools)")
+                    except Exception as e:
+                        print(f"  ✗ {fixture.home_team} vs {fixture.away_team}: Error - {e}")
+        else:
+            for f in fixtures:
+                try:
+                    report = self._analyze_skilled(
+                        f.home_team_id,
+                        f.away_team_id,
+                        f.round_number,
+                        f.match_date,
+                    )
+                    reports.append(report)
+                    mark = "✓" if report.predicted_result else "?"
+                    print(f"  {mark} {f.home_team} vs {f.away_team}: {report.predicted_result or '?'} ({report.time_seconds:.1f}s, {len(report.tools_used)} tools)")
+                except Exception as e:
+                    print(f"  ✗ {f.home_team} vs {f.away_team}: Error - {e}")
+        
+        return reports
+    
+    def _analyze_skilled(
+        self,
+        home_team_id: int,
+        away_team_id: int,
+        round_number: int,
+        match_date,
+    ) -> AnalysisReport:
+        """Run single Skilled analysis."""
+        # Create NEW agent per call to avoid race conditions in parallel execution
+        agent = SkilledAgent(model=self.model)
+        return agent.analyze(
             home_team=home_team_id,
             away_team=away_team_id,
             round_number=round_number,
@@ -306,7 +382,7 @@ def main():
         type=str,
         nargs="+",
         default=["coded"],
-        choices=["coded", "openclaw"],
+        choices=["coded", "openclaw", "skilled"],
         help="Methods to test"
     )
     parser.add_argument(
@@ -326,10 +402,16 @@ def main():
         default=3,
         help="Max parallel workers"
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gpt-4o-mini",
+        help="Model for skilled agent (e.g., gpt-5.2, gpt-5-mini)"
+    )
     
     args = parser.parse_args()
     
-    runner = BacktestRunner(max_workers=args.workers)
+    runner = BacktestRunner(max_workers=args.workers, model=args.model)
     runner.run(
         rounds=args.rounds,
         methods=args.methods,

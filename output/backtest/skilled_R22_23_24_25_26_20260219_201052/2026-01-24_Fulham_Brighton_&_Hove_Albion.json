@@ -1,0 +1,16 @@
+{
+  "fixture_id": "2026-01-24_Fulham_Brighton_&_Hove_Albion",
+  "home_team": "Fulham",
+  "away_team": "Brighton & Hove Albion",
+  "round_number": 23,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [],
+  "tokens_used": 6438,
+  "time_seconds": 9.137461185455322,
+  "model": "gpt-4o-mini"
+}

@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-11-29_Manchester_City_Leeds_United",
+  "home_team": "Manchester City",
+  "away_team": "Leeds United",
+  "round_number": 13,
+  "predicted_result": "H",
+  "predicted_scoreline": "3-1",
+  "home_win_prob": 0.7,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.18,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5734,
+  "time_seconds": 10.577531099319458,
+  "model": "gpt-4o-mini"
+}

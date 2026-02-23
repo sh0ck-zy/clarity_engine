@@ -1,0 +1,16 @@
+{
+  "fixture_id": "2026-01-17_Nottingham_Forest_Arsenal",
+  "home_team": "Nottingham Forest",
+  "away_team": "Arsenal",
+  "round_number": 22,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-3",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [],
+  "tokens_used": 6530,
+  "time_seconds": 9.509249925613403,
+  "model": "gpt-4o-mini"
+}

@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2025-11-23_Arsenal_Tottenham_Hotspur",
+  "home_team": "Arsenal",
+  "away_team": "Tottenham Hotspur",
+  "round_number": 12,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 9596,
+  "time_seconds": 26.315224170684814,
+  "model": "gpt-5-mini"
+}

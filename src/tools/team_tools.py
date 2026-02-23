@@ -17,6 +17,8 @@ from .base import (
     resolve_team,
     get_team_name,
     get_current_round,
+    get_current_manager_info,
+    get_formation_under_current_manager,
     ToolResponse,
     format_form_string,
     format_trend,
@@ -102,7 +104,7 @@ def get_team_state(
                 "xg_diff_last5": state["xg_diff_last5"],
             },
             "style": {
-                "primary_formation": state["primary_formation"],
+                "primary_formation": get_formation_under_current_manager(team_id, round_number) or state["primary_formation"],
                 "avg_possession": state["avg_possession"],
             },
             "attack": {

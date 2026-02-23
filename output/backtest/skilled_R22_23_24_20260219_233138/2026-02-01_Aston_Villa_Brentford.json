@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-01_Aston_Villa_Brentford",
+  "home_team": "Aston Villa",
+  "away_team": "Brentford",
+  "round_number": 24,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 9759,
+  "time_seconds": 26.61632490158081,
+  "model": "gpt-5-mini"
+}

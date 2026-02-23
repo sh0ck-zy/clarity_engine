@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-08-23_AFC_Bournemouth_Wolverhampton_Wanderers",
+  "home_team": "AFC Bournemouth",
+  "away_team": "Wolverhampton Wanderers",
+  "round_number": 2,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5486,
+  "time_seconds": 10.740567207336426,
+  "model": "gpt-4o-mini"
+}

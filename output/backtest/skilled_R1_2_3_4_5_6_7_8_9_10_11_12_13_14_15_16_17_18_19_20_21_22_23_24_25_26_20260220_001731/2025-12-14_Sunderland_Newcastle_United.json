@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-12-14_Sunderland_Newcastle_United",
+  "home_team": "Sunderland",
+  "away_team": "Newcastle United",
+  "round_number": 16,
+  "predicted_result": "A",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6192,
+  "time_seconds": 16.411176919937134,
+  "model": "gpt-4o-mini"
+}

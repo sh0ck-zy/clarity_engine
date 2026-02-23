@@ -1,0 +1,28 @@
+{
+  "fixture_id": "2025-08-16_Sunderland_West_Ham_United",
+  "home_team": "Sunderland",
+  "away_team": "West Ham United",
+  "round_number": 1,
+  "predicted_result": "D",
+  "predicted_scoreline": "1-1",
+  "home_win_prob": 0.33,
+  "draw_prob": 0.4,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 3327,
+  "time_seconds": 15.218831062316895,
+  "model": "gpt-4o-mini"
+}

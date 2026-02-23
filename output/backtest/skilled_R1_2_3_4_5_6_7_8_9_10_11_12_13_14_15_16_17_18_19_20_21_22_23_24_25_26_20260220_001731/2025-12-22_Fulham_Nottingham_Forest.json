@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-12-22_Fulham_Nottingham_Forest",
+  "home_team": "Fulham",
+  "away_team": "Nottingham Forest",
+  "round_number": 17,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5763,
+  "time_seconds": 17.543863773345947,
+  "model": "gpt-4o-mini"
+}

@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-12-07_Fulham_Crystal_Palace",
+  "home_team": "Fulham",
+  "away_team": "Crystal Palace",
+  "round_number": 15,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-2",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5839,
+  "time_seconds": 8.115314960479736,
+  "model": "gpt-4o-mini"
+}

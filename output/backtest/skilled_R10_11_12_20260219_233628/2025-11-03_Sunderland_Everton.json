@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-11-03_Sunderland_Everton",
+  "home_team": "Sunderland",
+  "away_team": "Everton",
+  "round_number": 10,
+  "predicted_result": null,
+  "predicted_scoreline": null,
+  "home_win_prob": null,
+  "draw_prob": null,
+  "away_win_prob": null,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5772,
+  "time_seconds": 9.94736099243164,
+  "model": "gpt-4o-mini"
+}

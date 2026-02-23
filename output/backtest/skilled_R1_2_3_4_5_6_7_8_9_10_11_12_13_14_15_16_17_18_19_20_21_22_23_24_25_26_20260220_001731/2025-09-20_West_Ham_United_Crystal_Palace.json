@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-09-20_West_Ham_United_Crystal_Palace",
+  "home_team": "West Ham United",
+  "away_team": "Crystal Palace",
+  "round_number": 5,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-2",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6457,
+  "time_seconds": 20.191724061965942,
+  "model": "gpt-4o-mini"
+}

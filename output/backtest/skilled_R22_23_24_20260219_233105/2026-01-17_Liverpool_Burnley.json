@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-01-17_Liverpool_Burnley",
+  "home_team": "Liverpool",
+  "away_team": "Burnley",
+  "round_number": 22,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-0",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_h2h",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_key_players",
+    "get_key_players",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 8757,
+  "time_seconds": 15.773914098739624,
+  "model": "gpt-5.2"
+}

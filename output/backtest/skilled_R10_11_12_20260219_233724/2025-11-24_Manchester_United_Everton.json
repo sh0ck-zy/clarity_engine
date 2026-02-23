@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2025-11-24_Manchester_United_Everton",
+  "home_team": "Manchester United",
+  "away_team": "Everton",
+  "round_number": 12,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 9490,
+  "time_seconds": 26.668848991394043,
+  "model": "gpt-5-mini"
+}

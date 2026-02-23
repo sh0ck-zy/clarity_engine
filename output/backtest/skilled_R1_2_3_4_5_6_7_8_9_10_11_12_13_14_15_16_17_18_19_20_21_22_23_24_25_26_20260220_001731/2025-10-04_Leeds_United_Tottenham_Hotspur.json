@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-10-04_Leeds_United_Tottenham_Hotspur",
+  "home_team": "Leeds United",
+  "away_team": "Tottenham Hotspur",
+  "round_number": 7,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-3",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5769,
+  "time_seconds": 12.561067819595337,
+  "model": "gpt-4o-mini"
+}

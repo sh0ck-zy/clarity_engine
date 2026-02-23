@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2026-01-24_West_Ham_United_Sunderland",
+  "home_team": "West Ham United",
+  "away_team": "Sunderland",
+  "round_number": 23,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-2",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5837,
+  "time_seconds": 7.902657985687256,
+  "model": "gpt-4o-mini"
+}

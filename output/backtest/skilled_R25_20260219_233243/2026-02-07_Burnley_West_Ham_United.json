@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-07_Burnley_West_Ham_United",
+  "home_team": "Burnley",
+  "away_team": "West Ham United",
+  "round_number": 25,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-2",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_key_players",
+    "get_key_players",
+    "get_h2h",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 9098,
+  "time_seconds": 17.39924907684326,
+  "model": "gpt-5.2"
+}

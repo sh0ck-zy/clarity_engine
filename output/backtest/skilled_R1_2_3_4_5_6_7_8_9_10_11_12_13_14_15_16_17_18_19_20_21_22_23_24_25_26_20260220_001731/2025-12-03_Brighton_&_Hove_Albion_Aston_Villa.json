@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-12-03_Brighton_&_Hove_Albion_Aston_Villa",
+  "home_team": "Brighton & Hove Albion",
+  "away_team": "Aston Villa",
+  "round_number": 14,
+  "predicted_result": "A",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6469,
+  "time_seconds": 16.887861013412476,
+  "model": "gpt-4o-mini"
+}

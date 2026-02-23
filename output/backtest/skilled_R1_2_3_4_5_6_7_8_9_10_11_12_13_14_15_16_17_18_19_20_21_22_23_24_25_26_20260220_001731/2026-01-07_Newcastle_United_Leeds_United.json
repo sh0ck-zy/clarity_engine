@@ -1,0 +1,28 @@
+{
+  "fixture_id": "2026-01-07_Newcastle_United_Leeds_United",
+  "home_team": "Newcastle United",
+  "away_team": "Leeds United",
+  "round_number": 21,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 6980,
+  "time_seconds": 8.92777967453003,
+  "model": "gpt-4o-mini"
+}

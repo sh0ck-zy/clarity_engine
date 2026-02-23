@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-10-26_Everton_Tottenham_Hotspur",
+  "home_team": "Everton",
+  "away_team": "Tottenham Hotspur",
+  "round_number": 9,
+  "predicted_result": "D",
+  "predicted_scoreline": "1-1",
+  "home_win_prob": 0.24750000000000003,
+  "draw_prob": 0.55,
+  "away_win_prob": 0.2025,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6464,
+  "time_seconds": 18.605525970458984,
+  "model": "gpt-4o-mini"
+}

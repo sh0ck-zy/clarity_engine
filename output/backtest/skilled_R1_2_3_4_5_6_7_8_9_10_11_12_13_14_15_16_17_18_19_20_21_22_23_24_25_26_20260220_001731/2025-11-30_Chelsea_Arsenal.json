@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-11-30_Chelsea_Arsenal",
+  "home_team": "Chelsea",
+  "away_team": "Arsenal",
+  "round_number": 13,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-2",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6398,
+  "time_seconds": 10.523494958877563,
+  "model": "gpt-4o-mini"
+}

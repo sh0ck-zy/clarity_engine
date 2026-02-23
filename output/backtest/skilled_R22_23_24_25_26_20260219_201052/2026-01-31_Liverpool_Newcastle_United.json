@@ -1,0 +1,16 @@
+{
+  "fixture_id": "2026-01-31_Liverpool_Newcastle_United",
+  "home_team": "Liverpool",
+  "away_team": "Newcastle United",
+  "round_number": 24,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-2",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [],
+  "tokens_used": 6680,
+  "time_seconds": 8.943801164627075,
+  "model": "gpt-4o-mini"
+}

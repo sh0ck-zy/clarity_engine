@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-11-01_Tottenham_Hotspur_Chelsea",
+  "home_team": "Tottenham Hotspur",
+  "away_team": "Chelsea",
+  "round_number": 10,
+  "predicted_result": "D",
+  "predicted_scoreline": "1-1",
+  "home_win_prob": 0.24750000000000003,
+  "draw_prob": 0.55,
+  "away_win_prob": 0.2025,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 5895,
+  "time_seconds": 12.000772953033447,
+  "model": "gpt-4o-mini"
+}

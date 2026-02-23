@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2025-11-22_Wolverhampton_Wanderers_Crystal_Palace",
+  "home_team": "Wolverhampton Wanderers",
+  "away_team": "Crystal Palace",
+  "round_number": 12,
+  "predicted_result": "A",
+  "predicted_scoreline": "0-2",
+  "home_win_prob": 0.27,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.55,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_h2h",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 9797,
+  "time_seconds": 27.62942409515381,
+  "model": "gpt-5-mini"
+}

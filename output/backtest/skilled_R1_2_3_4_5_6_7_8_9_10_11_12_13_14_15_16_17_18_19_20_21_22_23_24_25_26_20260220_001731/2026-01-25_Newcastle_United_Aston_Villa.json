@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2026-01-25_Newcastle_United_Aston_Villa",
+  "home_team": "Newcastle United",
+  "away_team": "Aston Villa",
+  "round_number": 23,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6496,
+  "time_seconds": 8.152939081192017,
+  "model": "gpt-4o-mini"
+}

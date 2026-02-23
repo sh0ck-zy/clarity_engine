@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-02-06_Leeds_United_Nottingham_Forest",
+  "home_team": "Leeds United",
+  "away_team": "Nottingham Forest",
+  "round_number": 25,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.55,
+  "draw_prob": 0.18,
+  "away_win_prob": 0.27,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_key_players",
+    "get_key_players",
+    "get_h2h",
+    "get_manager_info",
+    "get_manager_info",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 8987,
+  "time_seconds": 14.795153141021729,
+  "model": "gpt-5.2"
+}

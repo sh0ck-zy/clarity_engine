@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2026-01-07_Burnley_Manchester_United",
+  "home_team": "Burnley",
+  "away_team": "Manchester United",
+  "round_number": 21,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-3",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_team_form",
+    "get_team_form",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 8266,
+  "time_seconds": 10.298877954483032,
+  "model": "gpt-4o-mini"
+}

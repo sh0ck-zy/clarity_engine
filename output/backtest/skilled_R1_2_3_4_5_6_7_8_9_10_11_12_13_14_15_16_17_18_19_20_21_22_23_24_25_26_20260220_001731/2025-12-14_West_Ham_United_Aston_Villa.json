@@ -1,0 +1,26 @@
+{
+  "fixture_id": "2025-12-14_West_Ham_United_Aston_Villa",
+  "home_team": "West Ham United",
+  "away_team": "Aston Villa",
+  "round_number": 16,
+  "predicted_result": "A",
+  "predicted_scoreline": "1-3",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state"
+  ],
+  "tokens_used": 6568,
+  "time_seconds": 24.32120966911316,
+  "model": "gpt-4o-mini"
+}

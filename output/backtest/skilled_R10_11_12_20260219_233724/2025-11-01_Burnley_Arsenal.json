@@ -1,0 +1,30 @@
+{
+  "fixture_id": "2025-11-01_Burnley_Arsenal",
+  "home_team": "Burnley",
+  "away_team": "Arsenal",
+  "round_number": 10,
+  "predicted_result": "A",
+  "predicted_scoreline": "0-2",
+  "home_win_prob": 0.18,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.7,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_team_form",
+    "get_team_form",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact",
+    "get_psychological_state",
+    "get_psychological_state",
+    "get_manager_info",
+    "get_manager_info"
+  ],
+  "tokens_used": 9181,
+  "time_seconds": 21.075682878494263,
+  "model": "gpt-5-mini"
+}

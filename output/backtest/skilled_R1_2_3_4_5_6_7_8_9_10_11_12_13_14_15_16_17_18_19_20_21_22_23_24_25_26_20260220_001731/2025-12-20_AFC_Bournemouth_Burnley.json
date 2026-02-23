@@ -1,0 +1,24 @@
+{
+  "fixture_id": "2025-12-20_AFC_Bournemouth_Burnley",
+  "home_team": "AFC Bournemouth",
+  "away_team": "Burnley",
+  "round_number": 17,
+  "predicted_result": "H",
+  "predicted_scoreline": "2-1",
+  "home_win_prob": 0.7,
+  "draw_prob": 0.12,
+  "away_win_prob": 0.18,
+  "recommended_bet": null,
+  "tools_used": [
+    "get_team_state",
+    "get_team_state",
+    "get_h2h",
+    "get_key_players",
+    "get_key_players",
+    "get_injuries_impact",
+    "get_injuries_impact"
+  ],
+  "tokens_used": 6004,
+  "time_seconds": 27.69018316268921,
+  "model": "gpt-4o-mini"
+}
