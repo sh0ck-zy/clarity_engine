@@ -35,6 +35,14 @@ TASK.md
 TOOLS.md
 USER.md
 
+# Legacy modules (kept locally, removed from repo)
+backtest/
+config/
+src/data/scrapers/
+src/data/feature_engineering.py
+src/data/injury_impact.py
+src/data/player_impact.py
+
 # Project Data
 data/
 !src/data/
