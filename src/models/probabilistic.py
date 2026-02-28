@@ -60,6 +60,14 @@ class ProbabilisticEvalResults:
     per_round: List[Dict] = field(default_factory=list)
 
 
+def _apply_prob_floor(probas: np.ndarray, floor: float = 0.05) -> np.ndarray:
+    """Apply probability floor and renormalize. Prevents absurd predictions."""
+    if floor <= 0:
+        return probas
+    floored = np.maximum(probas, floor)
+    return floored / floored.sum()
+
+
 def _compute_margin_entropy(probas: np.ndarray) -> Tuple[float, float, float]:
     """Compute p_max, margin_top2, and normalized entropy for a probability vector."""
     sorted_p = np.sort(probas)[::-1]
@@ -92,6 +100,7 @@ def walk_forward_evaluate(
     min_train_rounds: int = 6,
     predict_rounds: Optional[List[int]] = None,
     C: float = 1.0,
+    class_weight: Optional[str] = None,
     debug_match_id: Optional[str] = None,
     feature_cols: Optional[List[str]] = None,
     quiet: bool = False,
@@ -146,8 +155,10 @@ def walk_forward_evaluate(
     all_marginal_proba = []
 
     for predict_round in predict_rounds:
-        train_mask = df["round_number"].values < predict_round
-        test_mask = df["round_number"].values == predict_round
+        # Only train on completed matches (non-NaN results)
+        has_result = pd.notna(df["result"].values)
+        train_mask = (df["round_number"].values < predict_round) & has_result
+        test_mask = (df["round_number"].values == predict_round) & has_result
 
         X_train = X_all[train_mask]
         y_train = y_all[train_mask]
@@ -172,12 +183,17 @@ def walk_forward_evaluate(
             C=C,
             max_iter=1000,
             random_state=42,
-            class_weight=None,
+            class_weight=class_weight,
         )
         model.fit(X_train_scaled, y_train)
 
         # Predict
         probas = model.predict_proba(X_test_scaled)
+        # Apply probability floor
+        prob_floor = getattr(model_config, "PROB_FLOOR", 0.0)
+        if prob_floor > 0:
+            for j in range(len(probas)):
+                probas[j] = _apply_prob_floor(probas[j], prob_floor)
         class_idx = {cls: i for i, cls in enumerate(model.classes_)}
 
         # Train rounds for audit
@@ -574,7 +590,7 @@ def predict_round(
     allow_missing_elo: bool = False,
 ) -> List[Dict]:
     """
-    Predict a single round using the frozen v1.1 config.
+    Predict a single round using the frozen model config.
 
     Trains on all rounds < target_round, predicts target_round.
     Returns list of match report dicts (the official schema).
@@ -583,14 +599,15 @@ def predict_round(
     """
     feature_cols = model_config.FEATURE_COLS
     C = model_config.C
+    class_weight = model_config.MODEL_SPEC.get("class_weight")
 
     if df is None:
         df = build_feature_dataset(conn=conn, allow_missing_elo=allow_missing_elo)
 
     all_rounds = sorted(df["round_number"].unique())
 
-    # Training data: all completed rounds before target
-    train_mask = df["round_number"].values < target_round
+    # Training data: all completed rounds before target (exclude unfinished matches)
+    train_mask = (df["round_number"].values < target_round) & df["result"].notna().values
     X_train = df.loc[train_mask, feature_cols].values.astype(float)
     y_train = df.loc[train_mask, "result"].values
 
@@ -622,11 +639,16 @@ def predict_round(
         C=C,
         max_iter=1000,
         random_state=model_config.RANDOM_STATE,
-        class_weight=None,
+        class_weight=class_weight,
     )
     model.fit(X_train_scaled, y_train)
 
     probas = model.predict_proba(X_test_scaled)
+    # Apply probability floor
+    prob_floor = getattr(model_config, "PROB_FLOOR", 0.0)
+    if prob_floor > 0:
+        for j in range(len(probas)):
+            probas[j] = _apply_prob_floor(probas[j], prob_floor)
     class_idx = {cls: i for i, cls in enumerate(model.classes_)}
     train_rounds_list = sorted(df.loc[train_mask, "round_number"].unique().tolist())
 

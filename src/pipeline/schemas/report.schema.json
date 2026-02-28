@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clarity.local/schemas/report.schema.json",
+  "title": "Clarity Analysis Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "fixture",
+    "summary",
+    "analysis",
+    "probabilities",
+    "prediction",
+    "signals",
+    "risk_flags",
+    "writer_metadata"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "report_id": { "type": "string" },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixture_id", "round_number", "match_date", "home_team", "away_team"],
+      "properties": {
+        "fixture_id": { "type": "string" },
+        "round_number": { "type": "integer" },
+        "match_date": { "type": "string", "format": "date-time" },
+        "home_team": { "type": "string" },
+        "away_team": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headline", "overview"],
+      "properties": {
+        "headline": { "type": "string", "minLength": 1 },
+        "overview": { "type": "string", "minLength": 1 }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prediction_rationale",
+        "key_factors",
+        "risks",
+        "confidence_assessment"
+      ],
+      "properties": {
+        "prediction_rationale": { "type": "string", "minLength": 1 },
+        "key_factors": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "risks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confidence_assessment": { "type": "string", "minLength": 1 }
+      }
+    },
+    "probabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["home_win", "draw", "away_win"],
+      "properties": {
+        "home_win": { "type": "number" },
+        "draw": { "type": "number" },
+        "away_win": { "type": "number" }
+      }
+    },
+    "prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["predicted_result", "confidence_label"],
+      "properties": {
+        "predicted_result": { "type": "string", "enum": ["H", "D", "A"] },
+        "confidence_label": { "type": "string", "enum": ["high", "medium", "low"] }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p_max", "margin_top2", "entropy_norm"],
+      "properties": {
+        "p_max": { "type": "number" },
+        "margin_top2": { "type": "number" },
+        "entropy_norm": { "type": "number" }
+      }
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "writer_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "temperature",
+        "prompt_version",
+        "facts_hash",
+        "created_at",
+        "generation_mode"
+      ],
+      "properties": {
+        "model": { "type": "string" },
+        "temperature": { "type": "number" },
+        "prompt_version": { "type": "string" },
+        "facts_hash": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "generation_mode": { "type": "string", "enum": ["llm", "template_fallback"] }
+      }
+    }
+  }
+}

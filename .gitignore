@@ -20,3 +20,11 @@ data/
 !src/data/
 !src/data/**
 __pycache__/
+output/
+
+# Generated outputs
+output/
+
+# Claude worktrees
+.claude/worktrees/
+

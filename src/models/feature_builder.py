@@ -25,7 +25,7 @@ if str(_SRC_PATH) not in sys.path:
 from database.config import get_connection
 from models.elo_cache import bulk_fetch, get_team_elo, report_coverage
 
-# Feature columns used by the model (9 deltas + 2 absolutes)
+# Feature columns used by the model (9 deltas + 2 absolutes + 3 convergence + 6 market)
 FEATURE_COLS = [
     "xg_diff_last5_delta",
     "xg_for_last5_delta",
@@ -38,6 +38,17 @@ FEATURE_COLS = [
     "elo_delta",
     "home_venue_points",
     "away_venue_points",
+    # Convergence features (draw signals)
+    "strength_convergence",
+    "form_convergence",
+    "clean_sheets_delta",
+    # Market odds features
+    "market_prob_H",
+    "market_prob_D",
+    "market_prob_A",
+    "market_draw_signal",
+    "market_home_edge",
+    "market_entropy",
 ]
 
 # Metadata columns (not used as features)
@@ -65,13 +76,21 @@ SELECT
     h.xg_against_last5  AS home_xg_against_last5,
     h.xg_diff_last5     AS home_xg_diff_last5,
     h.home_points       AS home_venue_points,
+    h.draws             AS home_draws,
+    h.played            AS home_played,
+    h.clean_sheets_last5 AS home_clean_sheets_last5,
+    h.goals_conceded_last5 AS home_goals_conceded_last5,
     a.position          AS away_position,
     a.goal_difference   AS away_goal_diff,
     a.form_points       AS away_form_points,
     a.xg_for_last5      AS away_xg_for_last5,
     a.xg_against_last5  AS away_xg_against_last5,
     a.xg_diff_last5     AS away_xg_diff_last5,
-    a.away_points       AS away_venue_points
+    a.away_points       AS away_venue_points,
+    a.draws             AS away_draws,
+    a.played            AS away_played,
+    a.clean_sheets_last5 AS away_clean_sheets_last5,
+    a.goals_conceded_last5 AS away_goals_conceded_last5
 FROM fotmob_matches m
 JOIN team_states h
     ON h.team_id = m.home_team_id
@@ -79,18 +98,17 @@ JOIN team_states h
 JOIN team_states a
     ON a.team_id = m.away_team_id
     AND a.round_number = m.round_number - 1
-WHERE m.home_score IS NOT NULL
-    AND m.round_number > 1
+WHERE m.round_number > 1
 ORDER BY m.round_number, m.match_date
 """
 
 _REST_DAYS_SQL = """
 WITH team_dates AS (
     SELECT home_team_id AS team_id, match_date, round_number
-    FROM fotmob_matches WHERE home_score IS NOT NULL
+    FROM fotmob_matches
     UNION ALL
     SELECT away_team_id AS team_id, match_date, round_number
-    FROM fotmob_matches WHERE home_score IS NOT NULL
+    FROM fotmob_matches
 ),
 with_prev AS (
     SELECT
@@ -119,14 +137,26 @@ FROM with_prev
 """
 
 
-def _load_matches_with_states(conn) -> pd.DataFrame:
+def _load_matches_with_states(conn, league_id: Optional[int] = None) -> pd.DataFrame:
     """Load matches joined with pre-match team_states (round N-1)."""
-    return pd.read_sql(_MATCHES_WITH_STATES_SQL, conn)
+    sql = _MATCHES_WITH_STATES_SQL
+    if league_id is not None:
+        sql = sql.replace(
+            "WHERE m.round_number > 1",
+            f"WHERE m.round_number > 1\n    AND m.league_id = {league_id}\n    AND h.league_id = {league_id}\n    AND a.league_id = {league_id}",
+        )
+    return pd.read_sql(sql, conn)
 
 
-def _compute_rest_days(conn) -> pd.DataFrame:
+def _compute_rest_days(conn, league_id: Optional[int] = None) -> pd.DataFrame:
     """Compute league rest days per team per round."""
-    return pd.read_sql(_REST_DAYS_SQL, conn)
+    sql = _REST_DAYS_SQL
+    if league_id is not None:
+        sql = sql.replace(
+            "FROM fotmob_matches\n",
+            f"FROM fotmob_matches WHERE league_id = {league_id}\n",
+        )
+    return pd.read_sql(sql, conn)
 
 
 def _merge_rest_days(df: pd.DataFrame, rest_df: pd.DataFrame) -> pd.DataFrame:
@@ -151,7 +181,7 @@ def _merge_rest_days(df: pd.DataFrame, rest_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _merge_elo(df: pd.DataFrame) -> pd.DataFrame:
+def _merge_elo(df: pd.DataFrame, countries: Optional[List[str]] = None) -> pd.DataFrame:
     """Add ELO ratings and missing flags."""
     home_elos = []
     away_elos = []
@@ -165,8 +195,8 @@ def _merge_elo(df: pd.DataFrame) -> pd.DataFrame:
         elif isinstance(match_date, datetime):
             match_date = match_date.date()
 
-        h_elo = get_team_elo(row["home_team_name"], match_date)
-        a_elo = get_team_elo(row["away_team_name"], match_date)
+        h_elo = get_team_elo(row["home_team_name"], match_date, countries=countries)
+        a_elo = get_team_elo(row["away_team_name"], match_date, countries=countries)
 
         home_elos.append(h_elo)
         away_elos.append(a_elo)
@@ -180,6 +210,182 @@ def _merge_elo(df: pd.DataFrame) -> pd.DataFrame:
     df["elo_missing_any"] = [
         1 if h or a else 0 for h, a in zip(missing_home, missing_away)
     ]
+
+    return df
+
+
+# Football-data.co.uk -> FotMob team name mapping
+_CSV_TO_FOTMOB = {
+    "Arsenal": "Arsenal",
+    "Aston Villa": "Aston Villa",
+    "Bournemouth": "AFC Bournemouth",
+    "Brentford": "Brentford",
+    "Brighton": "Brighton & Hove Albion",
+    "Burnley": "Burnley",
+    "Chelsea": "Chelsea",
+    "Crystal Palace": "Crystal Palace",
+    "Everton": "Everton",
+    "Fulham": "Fulham",
+    "Leeds": "Leeds United",
+    "Leicester": "Leicester City",
+    "Liverpool": "Liverpool",
+    "Man City": "Manchester City",
+    "Man United": "Manchester United",
+    "Newcastle": "Newcastle United",
+    "Nott'm Forest": "Nottingham Forest",
+    "Southampton": "Southampton",
+    "Sunderland": "Sunderland",
+    "Spurs": "Tottenham Hotspur",
+    "Tottenham": "Tottenham Hotspur",
+    "West Ham": "West Ham United",
+    "Wolves": "Wolverhampton Wanderers",
+    "Ipswich": "Ipswich Town",
+    "Luton": "Luton Town",
+    # Portuguese teams (football-data.co.uk name -> FotMob name)
+    # These will be populated once we see the actual FotMob names after backfill
+    "Sp Lisbon": "Sporting CP",
+    "Sporting": "Sporting CP",
+    "Benfica": "SL Benfica",
+    "Porto": "FC Porto",
+    "Braga": "SC Braga",
+    "Guimaraes": "Vitória SC",
+    "Famalicao": "FC Famalicão",
+    "Gil Vicente": "Gil Vicente FC",
+    "Moreirense": "Moreirense FC",
+    "Rio Ave": "Rio Ave FC",
+    "Santa Clara": "Santa Clara",
+    "Casa Pia": "Casa Pia AC",
+    "Estrela Amadora": "CF Estrela da Amadora",
+    "Estoril": "GD Estoril Praia",
+    "Arouca": "FC Arouca",
+    "Boavista": "Boavista FC",
+    "Nacional": "CD Nacional",
+    "AVS": "AVS",
+}
+
+# League ID -> odds CSV config
+_LEAGUE_ODDS_CONFIG = {
+    47: {  # Premier League
+        "csv": "E0_2526.csv",
+        "format": "standard",  # HomeTeam, AwayTeam, B365H/D/A columns
+    },
+    61: {  # Liga Portugal
+        "csv": "P1_2526.csv",
+        "format": "standard",
+    },
+    268: {  # Brasileirão
+        "csv": "BRA_2025.csv",
+        "format": "extra",  # Home, Away, PSCH/D/A columns, multi-season file
+        "season_filter": "2025",
+    },
+}
+
+# League ID -> ELO country codes
+_LEAGUE_COUNTRIES = {
+    47: ["ENG"],
+    61: ["POR"],
+    268: [],  # ClubELO doesn't cover Brazil
+}
+
+
+def _load_market_odds(league_id: int = 47, csv_path: Optional[Path] = None) -> Dict[tuple, tuple]:
+    """Load market odds from football-data.co.uk CSV. Returns lookup dict.
+
+    Handles two CSV formats:
+    - 'standard' (E0, P1): HomeTeam, AwayTeam, B365H/D/A
+    - 'extra' (BRA): Home, Away, PSCH/D/A (Pinnacle closing only)
+    """
+    config = _LEAGUE_ODDS_CONFIG.get(league_id, {})
+
+    if csv_path is None:
+        csv_name = config.get("csv")
+        if not csv_name:
+            return {}
+        csv_path = _PROJECT_ROOT / "data" / "football_data" / "odds" / csv_name
+
+    if not csv_path.exists():
+        return {}
+
+    odds_df = pd.read_csv(csv_path)
+    fmt = config.get("format", "standard")
+
+    if fmt == "extra":
+        # Brazilian/extra format: Country, League, Season, Date, Time, Home, Away, HG, AG, Res, PSCH, PSCD, PSCA, ...
+        season_filter = config.get("season_filter")
+        if season_filter:
+            odds_df = odds_df[odds_df["Season"].astype(str) == season_filter]
+
+        required = ["Home", "Away", "PSCH", "PSCD", "PSCA"]
+        if not all(c in odds_df.columns for c in required):
+            # Try closing B365 columns as fallback
+            required = ["Home", "Away", "B365CH", "B365CD", "B365CA"]
+            if not all(c in odds_df.columns for c in required):
+                return {}
+            h_col, d_col, a_col = "B365CH", "B365CD", "B365CA"
+        else:
+            h_col, d_col, a_col = "PSCH", "PSCD", "PSCA"
+
+        home_col, away_col = "Home", "Away"
+    else:
+        # Standard format: HomeTeam, AwayTeam, B365H, B365D, B365A
+        required = ["HomeTeam", "AwayTeam", "B365H", "B365D", "B365A"]
+        if not all(c in odds_df.columns for c in required):
+            return {}
+        h_col, d_col, a_col = "B365H", "B365D", "B365A"
+        home_col, away_col = "HomeTeam", "AwayTeam"
+
+    # Drop rows with missing odds
+    odds_df = odds_df.dropna(subset=[h_col, d_col, a_col])
+
+    # Build implied probabilities (normalized after vig removal)
+    odds_df["impl_H"] = 1.0 / odds_df[h_col].astype(float)
+    odds_df["impl_D"] = 1.0 / odds_df[d_col].astype(float)
+    odds_df["impl_A"] = 1.0 / odds_df[a_col].astype(float)
+    total_impl = odds_df["impl_H"] + odds_df["impl_D"] + odds_df["impl_A"]
+    odds_df["prob_H"] = odds_df["impl_H"] / total_impl
+    odds_df["prob_D"] = odds_df["impl_D"] / total_impl
+    odds_df["prob_A"] = odds_df["impl_A"] / total_impl
+
+    lookup: Dict[tuple, tuple] = {}
+    for _, row in odds_df.iterrows():
+        csv_home = str(row[home_col])
+        csv_away = str(row[away_col])
+        fotmob_home = _CSV_TO_FOTMOB.get(csv_home, csv_home)
+        fotmob_away = _CSV_TO_FOTMOB.get(csv_away, csv_away)
+        lookup[(fotmob_home, fotmob_away)] = (
+            float(row["prob_H"]),
+            float(row["prob_D"]),
+            float(row["prob_A"]),
+        )
+
+    return lookup
+
+
+def _merge_market_odds(df: pd.DataFrame, odds_lookup: Dict[tuple, tuple]) -> pd.DataFrame:
+    """Merge market implied probabilities into feature dataset."""
+    market_h = []
+    market_d = []
+    market_a = []
+
+    for _, row in df.iterrows():
+        key = (row["home_team_name"], row["away_team_name"])
+        if key in odds_lookup:
+            prob_h, prob_d, prob_a = odds_lookup[key]
+            market_h.append(prob_h)
+            market_d.append(prob_d)
+            market_a.append(prob_a)
+        else:
+            market_h.append(np.nan)
+            market_d.append(np.nan)
+            market_a.append(np.nan)
+
+    df["market_prob_H"] = market_h
+    df["market_prob_D"] = market_d
+    df["market_prob_A"] = market_a
+
+    matched = df["market_prob_H"].notna().sum()
+    total = len(df)
+    print(f"Market odds: {matched}/{total} matches matched ({matched/total:.1%})")
 
     return df
 
@@ -205,11 +411,35 @@ def _compute_deltas(df: pd.DataFrame) -> pd.DataFrame:
     # ELO delta (None -> 0.0 for delta, tracked by flags)
     df["elo_delta"] = df["home_elo"].fillna(0) - df["away_elo"].fillna(0)
 
+    # Convergence features: measure how CLOSE teams are (draw signals)
+    df["strength_convergence"] = 1.0 / (1.0 + df["elo_delta"].abs())
+    df["form_convergence"] = 1.0 / (1.0 + df["form_points_delta"].abs())
+    df["clean_sheets_delta"] = (
+        df["home_clean_sheets_last5"].fillna(0) - df["away_clean_sheets_last5"].fillna(0)
+    )
+
+    # Market-derived features (NaN if odds unavailable)
+    if "market_prob_H" in df.columns:
+        df["market_draw_signal"] = df["market_prob_D"]
+        df["market_home_edge"] = df["market_prob_H"] - df["market_prob_A"]
+        # Market entropy: how uncertain the market is (high = draw-likely)
+        # -sum(p * log(p)) / log(3), normalized to [0,1]
+        import math
+        def _market_entropy(row):
+            probs = [row["market_prob_H"], row["market_prob_D"], row["market_prob_A"]]
+            if any(pd.isna(p) for p in probs):
+                return np.nan
+            entropy = -sum(p * math.log(p) if p > 0 else 0.0 for p in probs)
+            return entropy / math.log(3)
+        df["market_entropy"] = df.apply(_market_entropy, axis=1)
+
     return df
 
 
 def _derive_result(row: pd.Series) -> str:
-    """Derive match result from scores."""
+    """Derive match result from scores. Returns NaN for scheduled matches."""
+    if pd.isna(row["home_score"]) or pd.isna(row["away_score"]):
+        return np.nan
     if row["home_score"] > row["away_score"]:
         return "H"
     if row["away_score"] > row["home_score"]:
@@ -248,16 +478,21 @@ def _check_postponements(df: pd.DataFrame) -> None:
 
 
 def build_feature_dataset(
-    conn=None, allow_missing_elo: bool = False
+    conn=None, allow_missing_elo: bool = False, league_id: Optional[int] = None,
 ) -> pd.DataFrame:
     """
     Build the full feature dataset for probabilistic model training.
 
+    Args:
+        conn: Database connection (auto-created if None)
+        allow_missing_elo: Allow > 5% ELO missing rate
+        league_id: FotMob league ID to filter by (None = all leagues, 47 = PL, 61 = Portugal, 268 = Brazil)
+
     Returns DataFrame with columns:
         - Identifiers: fotmob_match_id, round_number, match_date,
           home_team_name, away_team_name
-        - Features: FEATURE_COLS (11 columns)
-        - Metadata: METADATA_COLS (3 columns)
+        - Features: FEATURE_COLS
+        - Metadata: METADATA_COLS
         - Target: result (H/D/A)
     """
     managed_conn = False
@@ -266,12 +501,15 @@ def build_feature_dataset(
         managed_conn = True
 
     try:
-        print("Loading matches with pre-match team_states...")
-        df = _load_matches_with_states(conn)
-        print(f"  {len(df)} matches loaded (R2-R26)")
+        league_label = f"league_id={league_id}" if league_id is not None else "all leagues"
+        print(f"Loading matches with pre-match team_states ({league_label})...")
+        df = _load_matches_with_states(conn, league_id=league_id)
+        min_r = df["round_number"].min() if len(df) > 0 else "?"
+        max_r = df["round_number"].max() if len(df) > 0 else "?"
+        print(f"  {len(df)} matches loaded (R{min_r}-R{max_r})")
 
         print("Computing league rest days...")
-        rest_df = _compute_rest_days(conn)
+        rest_df = _compute_rest_days(conn, league_id=league_id)
         df = _merge_rest_days(df, rest_df)
     finally:
         if managed_conn and conn:
@@ -287,9 +525,38 @@ def build_feature_dataset(
         else:
             match_dates.append(d)
 
+    # Determine ELO countries for this league (or all if multi-league)
+    if league_id is not None:
+        elo_countries = _LEAGUE_COUNTRIES.get(league_id, ["ENG"])
+    else:
+        # Combine all country codes for multi-league
+        all_countries = set()
+        for countries in _LEAGUE_COUNTRIES.values():
+            all_countries.update(countries)
+        elo_countries = sorted(all_countries) if all_countries else ["ENG"]
+
     print("Fetching ELO ratings...")
-    bulk_fetch(match_dates)
-    df = _merge_elo(df)
+    if elo_countries:
+        bulk_fetch(match_dates, countries=elo_countries)
+    else:
+        print("  No ELO coverage for this league (will be marked as missing)")
+    df = _merge_elo(df, countries=elo_countries if elo_countries else None)
+
+    # Load and merge market odds
+    print("Loading market odds...")
+    if league_id is not None:
+        odds_lookup = _load_market_odds(league_id=league_id)
+    else:
+        # Load odds for all configured leagues
+        odds_lookup: Dict[str, Dict[str, float]] = {}
+        for lid in _LEAGUE_ODDS_CONFIG:
+            league_odds = _load_market_odds(league_id=lid)
+            if league_odds:
+                odds_lookup.update(league_odds)
+    if odds_lookup:
+        df = _merge_market_odds(df, odds_lookup)
+    else:
+        print("  No market odds data found, skipping")
 
     # Check ELO coverage
     all_teams = list(df["home_team_name"]) + list(df["away_team_name"])
@@ -303,7 +570,8 @@ def build_feature_dataset(
     if coverage["missing_teams"]:
         print(f"  Missing teams: {coverage['missing_teams']}")
 
-    if missing_rate > 0.05 and not allow_missing_elo:
+    # For leagues without ELO coverage (e.g., Brazil), skip the check
+    if missing_rate > 0.05 and not allow_missing_elo and elo_countries:
         raise RuntimeError(
             f"ELO missing rate {missing_rate:.1%} > 5%. "
             "Use --allow-missing-elo to proceed."

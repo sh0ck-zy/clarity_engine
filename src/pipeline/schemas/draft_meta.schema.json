@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clarity.local/schemas/draft_meta.schema.json",
+  "title": "Clarity Draft Metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "channel",
+    "source",
+    "violations",
+    "report_id",
+    "run_id",
+    "char_count",
+    "created_at",
+    "model",
+    "prompt_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["telegram", "x"]
+    },
+    "source": {
+      "type": "string",
+      "enum": ["llm", "template_fallback"]
+    },
+    "violations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "report_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "char_count": { "type": "integer", "minimum": 0 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "model": { "type": ["string", "null"] },
+    "prompt_version": { "type": ["string", "null"] }
+  }
+}

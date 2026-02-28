@@ -1,517 +1,224 @@
 # Clarity Engine — Architecture
 
+*Last updated: 2026-02-28*
+
 ## System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         WEBAPP (UI)                              │
-│         Navigate data, view intelligence, drill-down             │
-├─────────────────────────────────────────────────────────────────┤
-│                    INTELLIGENCE AGENTS                           │
-│     Research → Analyze → Synthesize → Validate → Learn          │
-├─────────────────────────────────────────────────────────────────┤
-│                      KNOWLEDGE BASE                              │
-│     Facts | Insights | Opinions | Predictions | Validations     │
-├─────────────────────────────────────────────────────────────────┤
-│                      DATA PLATFORM                               │
-│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌──────────────┐ │
-│  │  Sources  │→ │    ETL    │→ │ Normalized │→ │  Monitoring  │ │
-│  │           │  │ Pipelines │  │   Schema   │  │  & Quality   │ │
-│  └───────────┘  └───────────┘  └───────────┘  └──────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+DATA (facts) → ML (probabilities) → REASONING (narrative) → OUTPUT (telegram/html)
 ```
+
+Clarity Engine is a football prediction and match intelligence system.
+It ingests match data, computes probabilistic predictions, generates
+expert narrative analysis, and delivers through Telegram and HTML.
 
 ---
 
-## Layer 1: Data Platform
+## 1. Data Layer
 
-### Sources
+### Database: PostgreSQL (`clarity_football`)
 
-| Source | Type | Data | Status |
-|--------|------|------|--------|
-| **FotMob** | Primary | Matches, players, shotmaps, momentum | ✅ 260 matches |
-| **API-Football** | Secondary | Fixtures, odds, standings | ✅ Available |
-| **News Aggregator** | Text | News, articles, expert analysis | ✅ BetHub has this |
-| **Reddit** | Social | Discussions, sentiment | ✅ In aggregator |
-| **Twitter/X** | Social | Breaking news, reactions | ✅ Via Nitter |
+#### `team_states` — Team snapshots per round (520 rows, 20 teams × 26 rounds)
 
-### Normalized Schema
+**Used by ML model:**
+| Field | Description |
+|-------|-------------|
+| `position` | League position |
+| `goal_difference` | Season GD |
+| `form_points` | Last 5 games (0-15) |
+| `xg_diff_last5` | xG for - xG against (last 5) |
+| `home_points` / `away_points` | Venue-split points |
+| `clean_sheets_last5` | Clean sheets in last 5 |
 
-```sql
--- Core Entities
-competitions (id, name, country, type)
-seasons (id, competition_id, year, start_date, end_date)
-teams (id, name, short_name, country, logo_url)
-players (id, name, nationality, position)
+**Used by Context (not ML):**
+| Field | Description |
+|-------|-------------|
+| `points`, `played`, `wins`, `draws`, `losses` | Season record |
+| `form_string` | e.g. "LWWDW" |
+| `form_trend` | "improving" / "stable" / "declining" |
+| `position_change_last5` | Movement in last 5 rounds |
+| `goals_scored_last5`, `goals_conceded_last5` | Recent goal record |
+| `xg_for_last5`, `xg_against_last5` | Raw xG last 5 |
+| `avg_possession` | Season average possession % |
+| `primary_formation` | Most used formation |
+| `shots_per_game`, `shots_on_target_per_game` | Attacking volume |
+| `xg_per_game`, `big_chances_per_game` | Attacking quality |
+| `shots_against_per_game`, `xg_against_per_game` | Defensive quality |
+| `home_wins/draws/losses`, `away_wins/draws/losses` | Venue split W-D-L |
 
--- Match Data
-matches (id, season_id, round, home_team_id, away_team_id, datetime, status)
-match_stats (match_id, team_id, possession, shots, xg, ...)
-match_events (match_id, minute, type, player_id, x, y, metadata)
-player_match_stats (match_id, player_id, minutes, goals, rating, ...)
+#### `fotmob_player_performances` — Per-player per-match (10,393 rows)
 
--- Computed State
-team_form (team_id, season_id, round, form_array, rolling_xg, ...)
-player_form (player_id, season_id, round, rolling_stats)
-team_style (team_id, season_id, cluster_label, style_metrics)
-```
+| Field | Description |
+|-------|-------------|
+| `player_name`, `team_name` | Identity |
+| `is_home`, `is_starter`, `position_id` | Role |
+| `rating` | FotMob match rating |
+| `minutes_played` | Minutes |
+| `goals`, `assists` | Output |
+| `xg`, `xgot`, `xa` | Expected metrics |
+| `shots`, `shots_on_target` | Shot volume |
+| `passes`, `passes_accurate`, `chances_created` | Creativity |
+| `tackles`, `interceptions`, `defensive_actions` | Defense |
 
-### ETL Pipelines
+#### `fotmob_matches` — Match data (380 rows, 260 finished)
 
-```python
-# Abstract base for all providers
-class SourceProvider(ABC):
-    @abstractmethod
-    async def fetch(self, params: dict) -> RawData: ...
-    
-    @abstractmethod
-    def transform(self, raw: RawData) -> NormalizedData: ...
-    
-    @abstractmethod
-    async def load(self, data: NormalizedData) -> None: ...
+| Field | Description |
+|-------|-------------|
+| `formation_home`, `formation_away` | Tactical setup |
+| `venue`, `attendance`, `referee` | Match context |
+| `home_avg_rating`, `away_avg_rating` | Team performance |
+| `stats` (JSONB) | Possession, shots, passes, xG per half |
+| `shotmap` (JSONB) | Per-shot xG and position |
+| `events` (JSONB) | Goals, cards, substitutions |
+| `momentum` (JSONB) | Momentum timeline |
 
-# Implementations
-class FotMobProvider(SourceProvider): ...
-class APIFootballProvider(SourceProvider): ...
-class NewsAggregatorProvider(SourceProvider): ...
-```
+#### `manager_history` — Manager stints (31 rows)
 
----
+| Field | Description |
+|-------|-------------|
+| `manager_name` | Name |
+| `first_match_round`, `last_match_round` | Tenure |
+| `matches`, `wins`, `draws`, `losses` | Record |
+| `is_current` | Active flag |
 
-## Layer 2: Knowledge Base
+#### External: ELO ratings (ClubELO cache)
 
-The Knowledge Base stores everything we know, organized by type:
-
-### Facts (Objective, from sources)
-```json
-{
-  "type": "fact",
-  "entity": "team:arsenal",
-  "attribute": "xg_last_5",
-  "value": 1.82,
-  "source": "fotmob",
-  "timestamp": "2026-02-15T10:00:00Z"
-}
-```
-
-### Insights (Learned by us)
-```json
-{
-  "type": "insight",
-  "claim": "Arsenal struggles vs low blocks",
-  "evidence": [
-    {"type": "stat", "value": "1.1 xG vs low blocks (vs 1.8 avg)", "source": "derived"},
-    {"type": "matches", "value": ["match:123", "match:456"], "pattern": "confirmed 4/5 times"}
-  ],
-  "confidence": 0.78,
-  "created_at": "2026-02-10T00:00:00Z"
-}
-```
-
-### Opinions (From experts, not ours)
-```json
-{
-  "type": "opinion",
-  "source": "the_athletic",
-  "author": "Michael Cox",
-  "claim": "Liverpool's new shape fixes midfield issues",
-  "url": "https://...",
-  "published_at": "2026-02-14T00:00:00Z",
-  "credibility": 0.9
-}
-```
-
-### Predictions (Our takes)
-```json
-{
-  "type": "prediction",
-  "match_id": "match:789",
-  "claims": [
-    {"claim": "Arsenal will dominate possession", "value": "58-62%", "confidence": 0.75},
-    {"claim": "Left channel will be key danger zone", "confidence": 0.82},
-    {"claim": "BTTS likely", "value": "yes", "confidence": 0.74}
-  ],
-  "created_at": "2026-02-15T08:00:00Z",
-  "status": "pending"
-}
-```
-
-### Validations (Post-match)
-```json
-{
-  "type": "validation",
-  "prediction_id": "pred:123",
-  "match_id": "match:789",
-  "results": [
-    {"claim": "Arsenal possession 58-62%", "actual": "58%", "score": 1.0},
-    {"claim": "Left channel danger zone", "actual": "0.62 xG from left (vs 0.28 avg)", "score": 0.9},
-    {"claim": "BTTS", "actual": "yes", "score": 1.0}
-  ],
-  "overall_score": 0.87,
-  "learnings": ["Left channel model accurate", "Trent vulnerability confirmed"]
-}
-```
+Per-team ELO ratings fetched by date. Used for `elo_delta` feature.
 
 ---
 
-## Layer 3: Intelligence Agents
+## 2. Feature Layer
 
-### Agent 1: Research Agent
+### ML Features (8, used in LogisticRegression v1.4)
 
-**Purpose:** Collect all relevant information for a match.
+| Feature | Formula |
+|---------|---------|
+| `xg_diff_last5_delta` | home_xg_diff - away_xg_diff |
+| `form_points_delta` | home_form - away_form |
+| `goal_diff_season_delta` | home_gd - away_gd |
+| `position_delta` | away_position - home_position |
+| `home_strength_delta` | home_venue_pts - away_venue_pts |
+| `elo_delta` | home_elo - away_elo |
+| `home_venue_points` | Home team's home points |
+| `away_venue_points` | Away team's away points |
 
-```python
-class ResearchAgent:
-    """
-    Collects stats + news + opinions for a match.
-    Does NOT interpret. Just gathers.
-    """
-    
-    async def research(self, match: Match) -> ResearchOutput:
-        # 1. Get team stats (last 5 matches)
-        home_stats = await self.get_team_stats(match.home_team, last_n=5)
-        away_stats = await self.get_team_stats(match.away_team, last_n=5)
-        
-        # 2. Get H2H history
-        h2h = await self.get_h2h(match.home_team, match.away_team)
-        
-        # 3. Get news (injuries, suspensions, drama)
-        news = await self.news_aggregator.collect_for_match(
-            match.home_team, match.away_team, match.datetime
-        )
-        
-        # 4. Get expert analysis (articles, podcasts)
-        analysis = await self.get_expert_analysis(match)
-        
-        # 5. Get odds and market sentiment
-        odds = await self.get_odds(match)
-        
-        # 6. Store in Knowledge Base
-        await self.kb.store_research(match.id, {
-            'stats': {'home': home_stats, 'away': away_stats},
-            'h2h': h2h,
-            'news': news,
-            'analysis': analysis,
-            'odds': odds
-        })
-        
-        return ResearchOutput(...)
-```
+### Context Features (for narrative, not ML)
 
-### Agent 2: Analysis Agent
+Everything from team_states + player aggregates + manager + recent results.
+See `context.json` structure in `src/intelligence/match_context.py`.
 
-**Purpose:** Structure insights from raw research.
+### Overlap
 
-```python
-class AnalysisAgent:
-    """
-    Reads research and identifies patterns, edges, uncertainties.
-    Combines quantitative (stats) with qualitative (articles).
-    """
-    
-    async def analyze(self, research: ResearchOutput) -> AnalysisOutput:
-        # 1. Identify key matchups
-        matchups = self.identify_matchups(research)
-        
-        # 2. Find tactical patterns
-        patterns = self.find_patterns(research)
-        
-        # 3. Extract insights from articles (LLM)
-        article_insights = await self.extract_from_articles(research.analysis)
-        
-        # 4. Identify contradictions
-        # "Stats say X but expert says Y"
-        contradictions = self.find_contradictions(research, article_insights)
-        
-        # 5. Identify uncertainties
-        # "We don't know X"
-        uncertainties = self.identify_unknowns(research)
-        
-        # 6. Generate structured analysis
-        return AnalysisOutput(
-            key_matchups=matchups,
-            patterns=patterns,
-            insights=article_insights,
-            contradictions=contradictions,
-            uncertainties=uncertainties,
-            evidence_map=self.build_evidence_map(research)
-        )
-```
-
-### Agent 3: Synthesis Agent
-
-**Purpose:** Create narrative for humans.
-
-```python
-class SynthesisAgent:
-    """
-    Takes structured analysis and creates story-driven output.
-    Adapts format to channel (webapp vs telegram).
-    """
-    
-    async def synthesize(
-        self, 
-        analysis: AnalysisOutput,
-        channel: str = "webapp"
-    ) -> Intelligence:
-        
-        # 1. Determine the "story" of this match
-        story = self.identify_story(analysis)
-        # e.g., "Two pressing teams, something has to give"
-        
-        # 2. Rank insights by importance
-        ranked_insights = self.rank_by_importance(analysis.insights)
-        
-        # 3. Create predictions with evidence
-        predictions = self.generate_predictions(analysis)
-        
-        # 4. Build scenarios
-        scenarios = self.build_scenarios(analysis)
-        # "If Arsenal scores first...", "If 0-0 at 60'..."
-        
-        # 5. Format for channel
-        if channel == "webapp":
-            output = self.format_webapp(story, ranked_insights, predictions, scenarios)
-        elif channel == "telegram":
-            output = self.format_telegram(story, ranked_insights, predictions, scenarios)
-        
-        # 6. Store predictions in KB for validation
-        await self.kb.store_predictions(match_id, predictions)
-        
-        return output
-```
-
-### Agent 4: Validation Agent
-
-**Purpose:** Compare predictions with reality post-match.
-
-```python
-class ValidationAgent:
-    """
-    After match ends, compares our predictions with what happened.
-    Scores accuracy and generates learnings.
-    """
-    
-    async def validate(self, match_id: str) -> ValidationReport:
-        # 1. Get our predictions
-        predictions = await self.kb.get_predictions(match_id)
-        
-        # 2. Get actual match data
-        reality = await self.get_match_reality(match_id)
-        
-        # 3. Compare each claim
-        results = []
-        for pred in predictions.claims:
-            score = self.score_prediction(pred, reality)
-            results.append({
-                'claim': pred.claim,
-                'predicted': pred.value,
-                'actual': self.get_actual(pred.claim, reality),
-                'score': score
-            })
-        
-        # 4. Calculate overall score
-        overall = sum(r['score'] for r in results) / len(results)
-        
-        # 5. Generate learnings
-        learnings = self.extract_learnings(predictions, reality, results)
-        
-        # 6. Store validation
-        await self.kb.store_validation(match_id, results, learnings)
-        
-        return ValidationReport(
-            match_id=match_id,
-            results=results,
-            overall_score=overall,
-            learnings=learnings
-        )
-```
-
-### Agent 5: Learning Agent
-
-**Purpose:** Improve the system over time.
-
-```python
-class LearningAgent:
-    """
-    Analyzes historical validations to improve predictions.
-    Updates confidence calibration, identifies blind spots.
-    """
-    
-    async def learn(self, period: str = "last_30_days") -> LearningReport:
-        # 1. Get all validations in period
-        validations = await self.kb.get_validations(period)
-        
-        # 2. Analyze error patterns
-        errors = self.analyze_errors(validations)
-        # e.g., "We consistently underestimate Liverpool away"
-        
-        # 3. Check calibration
-        calibration = self.check_calibration(validations)
-        # e.g., "Our 70% predictions are correct 65% of time"
-        
-        # 4. Identify blind spots
-        blind_spots = self.find_blind_spots(validations)
-        # e.g., "We don't track manager rotation patterns"
-        
-        # 5. Generate institutional knowledge
-        knowledge = self.generate_knowledge(validations)
-        # Facts we've learned that should inform future predictions
-        
-        # 6. Propose improvements
-        improvements = self.propose_improvements(errors, blind_spots)
-        
-        # 7. Store learnings
-        await self.kb.store_learnings(knowledge)
-        
-        return LearningReport(
-            calibration=calibration,
-            error_patterns=errors,
-            blind_spots=blind_spots,
-            new_knowledge=knowledge,
-            proposed_improvements=improvements
-        )
-```
+ML uses 8 deltas computed from `team_states`. Context uses the FULL
+`team_states` record plus `player_performances`, `manager_history`, and
+`fotmob_matches` for recent results and H2H.
 
 ---
 
-## Layer 4: Delivery
+## 3. Processing Layers
 
-### Webapp
-- Full match intelligence pages
-- Team deep dives
-- Player profiles
-- League views
-- Navigation and drill-down
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ DATA                                                             │
+│ team_states + player_performances + manager_history + matches    │
+│ → facts.json (raw stats)                                        │
+│ → context.json (structured: factual / ml_inference / angles)     │
+├──────────────────────────────────────────────────────────────────┤
+│ ML                                                               │
+│ LogisticRegression(C=0.01, balanced, 8 features)                │
+│ Walk-forward: train on R2..N-1, predict RN                      │
+│ → report.json (probabilities, drivers, confidence, risk_flags)   │
+├──────────────────────────────────────────────────────────────────┤
+│ REASONING                                                        │
+│ LLM narrator (gpt-4o-mini) + 4 pillar sections                 │
+│ 📝 a_historia (journalist) — narrative arc, stakes              │
+│ ⚽ onde_se_decide (pundit) — tactical matchup, key battles      │
+│ 🔬 o_que_pode_correr_mal (analyst) — risks, contrarian data     │
+│ 💡 bottom_line (synthesis) — one-sentence read                  │
+│ → narrative.json                                                 │
+├──────────────────────────────────────────────────────────────────┤
+│ OUTPUT                                                           │
+│ render_html.py → HTML review page (4 sections per match card)   │
+│ match_renderer.py → Telegram / X drafts                         │
+│ clarity-odds-core bot → subscriber delivery                     │
+└──────────────────────────────────────────────────────────────────┘
+```
 
-### Telegram Bot
-- Formatted intelligence
-- Alerts (lineup, odds movement)
-- On-demand queries
-- Subscription tiers
+### Output per match (in `output/rounds/PL_R28/matches/Arsenal_vs_Chelsea/`):
 
-### API
-- Raw intelligence endpoints
-- Custom queries
-- Bulk access
+| File | Layer | Content |
+|------|-------|---------|
+| `facts.json` | DATA | Raw team stats, computed features, market odds |
+| `context.json` | DATA | Full structured context (factual + ml_inference + narrative_angles) |
+| `report.json` | ML | Probabilities, drivers, confidence, risk flags |
+| `narrative.json` | REASONING | 4 pillar sections from LLM |
+| `quality_checks.json` | EVAL | MIS score per section |
+| `review.json` | WORKFLOW | Editorial status (pending/approved/published) |
+| `drafts/telegram.txt` | OUTPUT | Formatted Telegram message |
+| `drafts/x.txt` | OUTPUT | Formatted X/Twitter post |
 
 ---
 
-## Data Flow: Pre-Match
+## 4. Evaluation
 
-```
-1. TRIGGER: Match in 48h
-   │
-2. RESEARCH AGENT
-   ├── Fetch team stats (FotMob)
-   ├── Fetch H2H (FotMob)
-   ├── Fetch news (News Aggregator)
-   ├── Fetch articles (RSS, scrapers)
-   └── Fetch odds (API-Football)
-   │
-3. ANALYSIS AGENT
-   ├── Identify key matchups
-   ├── Extract article insights (LLM)
-   ├── Find patterns
-   └── Flag uncertainties
-   │
-4. SYNTHESIS AGENT
-   ├── Create narrative
-   ├── Generate predictions
-   ├── Build scenarios
-   └── Format for channels
-   │
-5. DELIVERY
-   ├── Publish to webapp
-   ├── Send to Telegram subscribers
-   └── Update after lineups
-```
+### ML Evaluation
 
-## Data Flow: Post-Match
+| Metric | v1.4 Value | Benchmark |
+|--------|-----------|-----------|
+| Log loss | 1.0629 | Uniform: 1.0986 |
+| Accuracy | 40.6% | Random: 33% |
+| Draw recall | 27.3% | v1.1: 1.9% |
+| vs Market | +5.1% worse | Bet365: 1.0118 |
 
-```
-1. TRIGGER: Match ended
-   │
-2. FETCH RESULTS
-   ├── Match stats (FotMob)
-   ├── Player performances
-   └── Events timeline
-   │
-3. VALIDATION AGENT
-   ├── Compare predictions vs reality
-   ├── Score each claim
-   └── Generate learnings
-   │
-4. LEARNING AGENT (periodic)
-   ├── Analyze error patterns
-   ├── Update calibration
-   └── Generate institutional knowledge
-   │
-5. KNOWLEDGE BASE
-   └── Store for future predictions
-```
+Walk-forward evaluation: train R2..N-1, predict RN, for N in [8..28].
+
+### Narrative Evaluation (MIS — Match Intelligence Score)
+
+Per-section scoring, weighted:
+
+| Section | Pillar | Weight | Checks |
+|---------|--------|--------|--------|
+| `a_historia` | Journalist | 25% | storytelling_flow, emotional_hook, specific_context |
+| `onde_se_decide` | Pundit | 30% | tactical_insight, formation_mentioned, key_battle_identified |
+| `o_que_pode_correr_mal` | Analyst | 25% | min_3_risks, data_backed, contrarian_view |
+| `bottom_line` | Synthesis | 20% | concise, actionable, not_fence_sitting |
+
+### Post-Match Validation
+
+After matches are played:
+1. Extract verifiable claims from narrative sections
+2. Compare to actual match data
+3. Score accuracy per section
+4. Track over time for learning
 
 ---
 
-## Technology Choices
+## 5. Key Scripts
 
-| Component | Choice | Reason |
-|-----------|--------|--------|
-| Database | PostgreSQL | Relational + JSONB flexibility |
-| Agent Framework | OpenClaw sessions | Already integrated |
-| LLM | Claude | Quality + context window |
-| Webapp | Next.js (BetHub) | Already exists |
-| Queue | Simple cron for now | Can upgrade later |
-| Cache | Redis or simple file | Speed |
-
----
-
-## Directory Structure
-
-```
-clarity_engine/
-├── docs/                          # Documentation
-│   ├── VISION.md
-│   ├── ARCHITECTURE.md
-│   ├── ROADMAP.md
-│   └── GAPS.md
-│
-├── src/
-│   ├── database/
-│   │   ├── schema.sql             # Normalized schema
-│   │   ├── knowledge_base.sql     # KB tables
-│   │   └── config.py
-│   │
-│   ├── sources/                   # Data providers
-│   │   ├── base.py                # SourceProvider ABC
-│   │   ├── fotmob/
-│   │   ├── api_football/
-│   │   └── news/                  # Link to BetHub aggregator
-│   │
-│   ├── agents/                    # Intelligence agents
-│   │   ├── base.py
-│   │   ├── research.py
-│   │   ├── analysis.py
-│   │   ├── synthesis.py
-│   │   ├── validation.py
-│   │   └── learning.py
-│   │
-│   ├── knowledge/                 # Knowledge Base
-│   │   ├── store.py
-│   │   └── queries.py
-│   │
-│   └── delivery/                  # Output formatting
-│       ├── webapp.py
-│       └── telegram.py
-│
-├── scripts/
-│   ├── run_pre_match.py           # Generate match intelligence
-│   ├── run_post_match.py          # Validate predictions
-│   └── run_learning.py            # Periodic learning
-│
-└── webapp/                        # Or link to BetHub
-```
+| Script | Purpose |
+|--------|---------|
+| `scripts/generate_round.py` | Generate full round: predictions + context + narratives |
+| `scripts/render_html.py` | HTML review page with 4-pillar match cards |
+| `scripts/quality_check.py` | MIS scoring per section |
+| `scripts/validate_postmatch.py` | Post-match claim validation |
+| `scripts/publish_preview.py` | Preview + export for Telegram |
+| `scripts/populate_kg_states.py` | Compute team_states from raw match data |
+| `scripts/backfill_fotmob.py` | Ingest match data from FotMob |
 
 ---
 
-*Last updated: 2026-02-15*
+## 6. Product Strategy
+
+```
+Phase 1 (NOW):    Free elite ball knowledge → build audience
+Phase 2 (LATER):  Paid full match intelligence after traction
+Phase 3 (FUTURE): Proven edge strategies → high-ticket, transparent
+```
+
+Three visible intelligence pillars:
+- 📝 **Journalist** — storytelling, emotional context
+- ⚽ **Pundit** — tactical analysis, matchup insight
+- 🔬 **Analyst** — data-driven, contrarian risks
+
+Internal (not visible to users):
+- 🕵️ **Market Intelligence** — odds comparison, value detection, EV analysis
