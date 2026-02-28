@@ -48,68 +48,147 @@ class MatchResult:
     shots_against: int
 
 
-def parse_stats_json(stats_json: dict) -> dict:
-    """Parse the FotMob stats JSON to extract key metrics."""
+def _parse_stats_new_format(stats_json: dict) -> dict:
+    """Parse stats from Scrapling __NEXT_DATA__ format (Periods → stats array).
+
+    Structure: {"Periods": {"All": {"stats": [
+        {"key": "top_stats", "stats": [
+            {"key": "BallPossesion", "stats": [61, 39]},
+            {"key": "expected_goals", "stats": ["2.03", "0.22"]},
+            ...
+        ]},
+        {"key": "shots", "stats": [
+            {"key": "total_shots", "stats": [16, 6]},
+            ...
+        ]}
+    ]}}}
+    """
     result = {
-        "possession_home": None,
-        "possession_away": None,
-        "xg_home": None,
-        "xg_away": None,
-        "shots_home": None,
-        "shots_away": None,
-        "shots_on_target_home": None,
-        "shots_on_target_away": None,
-        "big_chances_home": None,
-        "big_chances_away": None,
+        "possession_home": None, "possession_away": None,
+        "xg_home": None, "xg_away": None,
+        "shots_home": None, "shots_away": None,
+        "shots_on_target_home": None, "shots_on_target_away": None,
+        "big_chances_home": None, "big_chances_away": None,
     }
-    
-    if not stats_json or "All" not in stats_json:
-        return result
-    
-    # Parse the string representations of FotMobStatCategory
-    all_stats = stats_json.get("All", [])
-    
-    for category_str in all_stats:
-        # Extract values using regex
-        # Ball possession
-        match = re.search(r"title='Ball possession'.*?home='(\d+)'.*?away='(\d+)'", category_str)
-        if match:
-            result["possession_home"] = float(match.group(1))
-            result["possession_away"] = float(match.group(2))
-        
-        # Expected goals
-        match = re.search(r"key='expected_goals', home='([\d.]+)', away='([\d.]+)'", category_str)
-        if match:
-            result["xg_home"] = float(match.group(1))
-            result["xg_away"] = float(match.group(2))
-        
-        # Total shots
-        match = re.search(r"key='total_shots', home='(\d+)', away='(\d+)'", category_str)
-        if match:
-            result["shots_home"] = int(match.group(1))
-            result["shots_away"] = int(match.group(2))
-        
-        # Shots on target
-        match = re.search(r"key='ShotsOnTarget', home='(\d+)', away='(\d+)'", category_str)
-        if match:
-            result["shots_on_target_home"] = int(match.group(1))
-            result["shots_on_target_away"] = int(match.group(2))
-        
-        # Big chances
-        match = re.search(r"key='big_chance', home='(\d+)', away='(\d+)'", category_str)
-        if match:
-            result["big_chances_home"] = int(match.group(1))
-            result["big_chances_away"] = int(match.group(2))
-    
+
+    periods = stats_json.get("Periods", {})
+    all_period = periods.get("All", {})
+    categories = all_period.get("stats", [])
+
+    # Build a flat lookup: stat_key → [home, away]
+    stat_lookup = {}
+    for category in categories:
+        for stat in category.get("stats", []):
+            key = stat.get("key")
+            vals = stat.get("stats", [])
+            if key and isinstance(vals, list) and len(vals) >= 2:
+                stat_lookup[key] = vals
+
+    # Map keys to result fields
+    key_map = {
+        "BallPossesion": ("possession_home", "possession_away", float),
+        "expected_goals": ("xg_home", "xg_away", float),
+        "total_shots": ("shots_home", "shots_away", int),
+        "ShotsOnTarget": ("shots_on_target_home", "shots_on_target_away", int),
+        "big_chance": ("big_chances_home", "big_chances_away", int),
+    }
+
+    for stat_key, (home_field, away_field, cast_fn) in key_map.items():
+        vals = stat_lookup.get(stat_key)
+        if vals:
+            try:
+                result[home_field] = cast_fn(vals[0])
+                result[away_field] = cast_fn(vals[1])
+            except (ValueError, TypeError, IndexError):
+                pass
+
     return result
 
 
-def get_team_matches(conn) -> Dict[int, List[MatchResult]]:
-    """Get all matches organized by team."""
+def _parse_stats_legacy_format(stats_json: dict) -> dict:
+    """Parse stats from legacy PL backfill format (stringified dataclass repr).
+
+    Structure: {"All": ["FotMobStatCategory(title='Top stats', ...)", ...]}
+    """
+    result = {
+        "possession_home": None, "possession_away": None,
+        "xg_home": None, "xg_away": None,
+        "shots_home": None, "shots_away": None,
+        "shots_on_target_home": None, "shots_on_target_away": None,
+        "big_chances_home": None, "big_chances_away": None,
+    }
+
+    all_stats = stats_json.get("All", [])
+
+    for category_str in all_stats:
+        if not isinstance(category_str, str):
+            continue
+        # Ball possession
+        m = re.search(r"title='Ball possession'.*?home='(\d+)'.*?away='(\d+)'", category_str)
+        if m:
+            result["possession_home"] = float(m.group(1))
+            result["possession_away"] = float(m.group(2))
+
+        # Expected goals
+        m = re.search(r"key='expected_goals', home='([\d.]+)', away='([\d.]+)'", category_str)
+        if m:
+            result["xg_home"] = float(m.group(1))
+            result["xg_away"] = float(m.group(2))
+
+        # Total shots
+        m = re.search(r"key='total_shots', home='(\d+)', away='(\d+)'", category_str)
+        if m:
+            result["shots_home"] = int(m.group(1))
+            result["shots_away"] = int(m.group(2))
+
+        # Shots on target
+        m = re.search(r"key='ShotsOnTarget', home='(\d+)', away='(\d+)'", category_str)
+        if m:
+            result["shots_on_target_home"] = int(m.group(1))
+            result["shots_on_target_away"] = int(m.group(2))
+
+        # Big chances
+        m = re.search(r"key='big_chance', home='(\d+)', away='(\d+)'", category_str)
+        if m:
+            result["big_chances_home"] = int(m.group(1))
+            result["big_chances_away"] = int(m.group(2))
+
+    return result
+
+
+def parse_stats_json(stats_json: dict) -> dict:
+    """Parse the FotMob stats JSON to extract key metrics.
+
+    Handles two formats:
+    - New (Scrapling __NEXT_DATA__): dict with "Periods" key → clean JSON tree
+    - Legacy (PL old backfill): dict with "All" key containing string repr of dataclasses
+    """
+    result = {
+        "possession_home": None, "possession_away": None,
+        "xg_home": None, "xg_away": None,
+        "shots_home": None, "shots_away": None,
+        "shots_on_target_home": None, "shots_on_target_away": None,
+        "big_chances_home": None, "big_chances_away": None,
+    }
+
+    if not stats_json or not isinstance(stats_json, dict):
+        return result
+
+    # Detect format and dispatch
+    if "Periods" in stats_json:
+        return _parse_stats_new_format(stats_json)
+    elif "All" in stats_json:
+        return _parse_stats_legacy_format(stats_json)
+
+    return result
+
+
+def get_team_matches(conn, league_id: int = 47) -> Dict[int, List[MatchResult]]:
+    """Get all matches organized by team, filtered by league."""
     cur = conn.cursor()
-    
+
     cur.execute("""
-        SELECT 
+        SELECT
             fotmob_match_id, round_number, match_date,
             home_team_id, home_team_name, away_team_id, away_team_name,
             home_score, away_score,
@@ -117,8 +196,9 @@ def get_team_matches(conn) -> Dict[int, List[MatchResult]]:
             stats
         FROM fotmob_matches
         WHERE status = 'finished' AND round_number IS NOT NULL
+            AND league_id = %s
         ORDER BY round_number, match_date
-    """)
+    """, (league_id,))
     
     rows = cur.fetchall()
     cur.close()
@@ -348,55 +428,83 @@ def calculate_positions(team_states: List[dict], round_number: int) -> None:
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Populate team states from FotMob matches")
+    parser.add_argument("--league-id", type=int, default=47, help="FotMob league ID (default: 47 = PL)")
+    args = parser.parse_args()
+
+    league_id = args.league_id
     print("=" * 60)
-    print("CLARITY KG - Populating Team States")
+    print(f"CLARITY KG - Populating Team States (league_id={league_id})")
     print("=" * 60)
-    
+
     conn = psycopg2.connect(**DB_CONFIG)
-    
+
     try:
-        # 1. Create tables
-        print("\n[1/5] Creating KG tables...")
-        with open("scripts/001_create_kg_tables.sql", "r") as f:
-            sql = f.read()
-        
+        # 1. Ensure tables exist (without dropping existing data)
+        print("\n[1/5] Ensuring KG tables exist...")
         cur = conn.cursor()
-        cur.execute(sql)
-        conn.commit()
-        print("      ✓ Tables created")
-        
+        # Create tables only if they don't exist yet
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_name = 'team_states'
+            )
+        """)
+        tables_exist = cur.fetchone()[0]
+        if not tables_exist:
+            with open("scripts/001_create_kg_tables.sql", "r") as f:
+                sql = f.read()
+            cur.execute(sql)
+            conn.commit()
+            print("      ✓ Tables created")
+        else:
+            print("      ✓ Tables already exist (preserving data)")
+            conn.commit()
+
         # 2. Populate teams table
         print("\n[2/5] Populating teams table...")
         cur.execute("""
-            INSERT INTO teams (team_id, team_name)
-            SELECT DISTINCT home_team_id, home_team_name 
+            INSERT INTO teams (team_id, team_name, league_id)
+            SELECT DISTINCT home_team_id, home_team_name, league_id
             FROM fotmob_matches
-            ON CONFLICT (team_id) DO NOTHING
-        """)
+            WHERE league_id = %s
+            ON CONFLICT (team_id) DO UPDATE SET
+                league_id = EXCLUDED.league_id
+        """, (league_id,))
         conn.commit()
-        
-        cur.execute("SELECT COUNT(*) FROM teams")
+
+        cur.execute("SELECT COUNT(*) FROM teams WHERE league_id = %s", (league_id,))
         team_count = cur.fetchone()[0]
-        print(f"      ✓ {team_count} teams inserted")
-        
+        print(f"      ✓ {team_count} teams inserted for league {league_id}")
+
         # 3. Get all match data
         print("\n[3/5] Loading match data...")
-        team_matches = get_team_matches(conn)
+        team_matches = get_team_matches(conn, league_id=league_id)
         print(f"      ✓ Loaded matches for {len(team_matches)} teams")
-        
+
+        # Detect max round from data (not hardcoded)
+        all_rounds = set()
+        for matches in team_matches.values():
+            for m in matches:
+                all_rounds.add(m.round_number)
+        max_round = max(all_rounds) if all_rounds else 0
+        print(f"      ✓ Rounds 1-{max_round} detected")
+
         # 4. Compute team states for each round
         print("\n[4/5] Computing team states...")
         all_states = []
-        
-        for round_num in range(1, 27):
+
+        for round_num in range(1, max_round + 1):
             for team_id, matches in team_matches.items():
                 state = compute_team_state(team_id, round_num, matches)
                 if state:
+                    state["league_id"] = league_id
                     all_states.append(state)
-            
+
             # Calculate positions for this round
             calculate_positions(all_states, round_num)
-            
+
             if round_num % 5 == 0:
                 print(f"      ... Round {round_num} computed")
         
@@ -420,9 +528,10 @@ def main():
                 form_trend,
                 home_wins, home_draws, home_losses,
                 away_wins, away_draws, away_losses,
-                home_points, away_points
+                home_points, away_points,
+                league_id
             ) VALUES %s
-            ON CONFLICT (team_id, round_number) DO UPDATE SET
+            ON CONFLICT (team_id, round_number, league_id) DO UPDATE SET
                 position = EXCLUDED.position,
                 points = EXCLUDED.points,
                 played = EXCLUDED.played,
@@ -476,6 +585,7 @@ def main():
                 s["home_wins"], s["home_draws"], s["home_losses"],
                 s["away_wins"], s["away_draws"], s["away_losses"],
                 s["home_points"], s["away_points"],
+                s["league_id"],
             )
             for s in all_states
         ]
@@ -488,18 +598,28 @@ def main():
         state_count = cur.fetchone()[0]
         print(f"      ✓ {state_count} team states inserted")
         
-        # Show sample
+        # Show sample (first team found)
+        cur.execute("""
+            SELECT DISTINCT t.team_id, t.team_name
+            FROM teams t
+            JOIN team_states ts ON ts.team_id = t.team_id AND ts.league_id = %s
+            LIMIT 1
+        """, (league_id,))
+        sample_row = cur.fetchone()
+        sample_team_id = sample_row[0] if sample_row else None
+        sample_team_name = sample_row[1] if sample_row else "Unknown"
+
         print("\n" + "=" * 60)
-        print("SAMPLE: Liverpool progression (rounds 1, 10, 20, 26)")
+        print(f"SAMPLE: {sample_team_name} progression")
         print("=" * 60)
         cur.execute("""
-            SELECT round_number, position, points, form_string, 
+            SELECT round_number, position, points, form_string,
                    xg_for_last5, xg_against_last5, form_trend
-            FROM team_states 
-            WHERE team_id = 8650 
-            AND round_number IN (1, 10, 20, 26)
+            FROM team_states
+            WHERE team_id = %s AND league_id = %s
             ORDER BY round_number
-        """)
+            LIMIT 10
+        """, (sample_team_id, league_id))
         for row in cur.fetchall():
             print(f"  R{row[0]:2d}: Pos {row[1]:2d} | {row[2]:2d} pts | Form: {row[3]:5s} | xG: {row[4]:.1f} for / {row[5]:.1f} ag | {row[6]}")
         
