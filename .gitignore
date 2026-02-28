@@ -15,6 +15,9 @@ venv/
 # Jupyter
 .ipynb_checkpoints
 
+# Archive (local reference only)
+archive/
+
 # Project Data
 data/
 !src/data/
