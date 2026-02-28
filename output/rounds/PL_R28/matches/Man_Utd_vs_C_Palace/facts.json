@@ -1,0 +1,38 @@
+{
+  "fixture_id": "4813652",
+  "round_number": 28,
+  "match_date": "2026-03-01",
+  "home_team": "Manchester United",
+  "away_team": "Crystal Palace",
+  "home_stats": {
+    "position": 5,
+    "goal_difference": 10,
+    "form_points": 13,
+    "xg_diff_last5": 1.94,
+    "venue_points": 27,
+    "played": 26,
+    "clean_sheets_last5": 2,
+    "elo_delta_vs_opponent": 87.3944
+  },
+  "away_stats": {
+    "position": 13,
+    "goal_difference": -3,
+    "form_points": 7,
+    "xg_diff_last5": 2.67,
+    "venue_points": 20,
+    "played": 27,
+    "clean_sheets_last5": 2
+  },
+  "computed_features": {
+    "xg_diff_last5_delta": -0.73,
+    "form_points_delta": 6,
+    "goal_diff_season_delta": 13,
+    "position_delta": 8,
+    "home_strength_delta": 7,
+    "elo_delta": 87.3944,
+    "home_venue_points": 27,
+    "away_venue_points": 20
+  },
+  "market_odds": null,
+  "elo_missing": false
+}

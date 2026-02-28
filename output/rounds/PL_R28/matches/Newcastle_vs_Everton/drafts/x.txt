@@ -1,0 +1,6 @@
+R28 Newcastle vs Everton
+H 26.1% D 39.9% A 33.9%
+Tight call: Draw
+Driver: Away record
+Coin flip territory
+[v1.4 | 715f119f3b]

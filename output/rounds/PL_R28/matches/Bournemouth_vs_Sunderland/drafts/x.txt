@@ -1,0 +1,6 @@
+R28 Bournemouth vs Sunderland
+H 41.8% D 37.6% A 20.7%
+Tight call: Home Win
+Driver: ELO rating gap
+Coin flip territory
+[v1.4 | 41919e4e6c]

@@ -1,0 +1,38 @@
+{
+  "fixture_id": "4813649",
+  "round_number": 28,
+  "match_date": "2026-03-01",
+  "home_team": "Fulham",
+  "away_team": "Tottenham Hotspur",
+  "home_stats": {
+    "position": 10,
+    "goal_difference": -3,
+    "form_points": 6,
+    "xg_diff_last5": -0.25,
+    "venue_points": 23,
+    "played": 27,
+    "clean_sheets_last5": 0,
+    "elo_delta_vs_opponent": 5.6184
+  },
+  "away_stats": {
+    "position": 16,
+    "goal_difference": -4,
+    "form_points": 2,
+    "xg_diff_last5": -2.34,
+    "venue_points": 19,
+    "played": 27,
+    "clean_sheets_last5": 0
+  },
+  "computed_features": {
+    "xg_diff_last5_delta": 2.09,
+    "form_points_delta": 4,
+    "goal_diff_season_delta": 1,
+    "position_delta": 6,
+    "home_strength_delta": 4,
+    "elo_delta": 5.6184,
+    "home_venue_points": 23,
+    "away_venue_points": 19
+  },
+  "market_odds": null,
+  "elo_missing": false
+}

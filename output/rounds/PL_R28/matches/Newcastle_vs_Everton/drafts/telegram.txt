@@ -1,0 +1,6 @@
+R28 | Newcastle United vs Everton
+H 26.1%  D 39.9%  A 33.9%
+Tight call: Draw
+Key factors: Away record (+21.0), Home ground strength (+23.0), Form gap (-5.0, working against)
+Note: Model sees this as a coin flip
+[v1.4 | 715f119f3b]

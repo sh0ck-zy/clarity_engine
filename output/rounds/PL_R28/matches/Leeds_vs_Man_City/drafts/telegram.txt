@@ -1,0 +1,5 @@
+R28 | Leeds United vs Manchester City
+H 14.4%  D 32.7%  A 52.9%
+Moderate lean: Away Win
+Key factors: Goal diff gap (-40.0), ELO rating gap (-193.6), Form gap (-7.0)
+[v1.4 | cecdb8b8e1]

@@ -1,0 +1,5 @@
+R28 Wolves vs Aston Villa
+H 11.7% D 28.7% A 59.6%
+Strong lean: Away Win
+Driver: Goal diff gap
+[v1.4 | cdb4b9e321]

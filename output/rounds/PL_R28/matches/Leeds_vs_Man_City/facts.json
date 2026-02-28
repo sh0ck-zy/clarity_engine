@@ -1,0 +1,38 @@
+{
+  "fixture_id": "4813650",
+  "round_number": 28,
+  "match_date": "2026-02-28",
+  "home_team": "Leeds United",
+  "away_team": "Manchester City",
+  "home_stats": {
+    "position": 15,
+    "goal_difference": -9,
+    "form_points": 6,
+    "xg_diff_last5": -1.88,
+    "venue_points": 22,
+    "played": 27,
+    "clean_sheets_last5": 0,
+    "elo_delta_vs_opponent": -193.5725
+  },
+  "away_stats": {
+    "position": 2,
+    "goal_difference": 31,
+    "form_points": 13,
+    "xg_diff_last5": 2.77,
+    "venue_points": 21,
+    "played": 27,
+    "clean_sheets_last5": 2
+  },
+  "computed_features": {
+    "xg_diff_last5_delta": -4.65,
+    "form_points_delta": -7,
+    "goal_diff_season_delta": -40,
+    "position_delta": -13,
+    "home_strength_delta": 1,
+    "elo_delta": -193.5725,
+    "home_venue_points": 22,
+    "away_venue_points": 21
+  },
+  "market_odds": null,
+  "elo_missing": false
+}

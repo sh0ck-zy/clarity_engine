@@ -162,7 +162,7 @@ def match_exists(conn, match_id: int) -> bool:
         return cur.fetchone() is not None
 
 
-def upsert_match(conn, detail: FotMobMatchDetail) -> None:
+def upsert_match(conn, detail: FotMobMatchDetail, league_id: int = 47) -> None:
     """Insert or update a match and its player performances."""
     motm = detail.match_facts.player_of_the_match if detail.match_facts else None
     motm_id = motm.get("id") if isinstance(motm, dict) else None
@@ -227,7 +227,7 @@ def upsert_match(conn, detail: FotMobMatchDetail) -> None:
             """,
             (
                 detail.fotmob_match_id,
-                47,  # league_id
+                league_id,
                 detail.season or "2025/2026",
                 detail.round_number,
                 detail.match_date.date() if detail.match_date else datetime.now(timezone.utc).date(),
@@ -511,7 +511,7 @@ def run_backfill(args: argparse.Namespace) -> None:
 
             try:
                 detail = provider.fetch_match_details(match.id)
-                upsert_match(conn, detail)
+                upsert_match(conn, detail, league_id=args.league_id)
                 round_log_parts.append(f"{label} [fetched]")
                 total_fetched += 1
             except Exception as exc:

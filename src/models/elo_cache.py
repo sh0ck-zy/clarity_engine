@@ -51,6 +51,30 @@ _FOTMOB_TO_ELO: Dict[str, str] = {
     "Wolverhampton Wanderers": "Wolves",
     "Ipswich Town": "Ipswich",
     "Luton Town": "Luton",
+    # Portuguese teams (FotMob name -> ClubELO name)
+    "Sporting CP": "Sporting",
+    "SL Benfica": "Benfica",
+    "FC Porto": "Porto",
+    "SC Braga": "Braga",
+    "Vitória SC": "Guimaraes",
+    "Vitória de Guimarães": "Guimaraes",
+    "Famalicão": "Famalicao",
+    "FC Famalicão": "Famalicao",
+    "Gil Vicente FC": "Gil Vicente",
+    "Moreirense FC": "Moreirense",
+    "Rio Ave FC": "Rio Ave",
+    "Santa Clara": "Santa Clara",
+    "Casa Pia AC": "Casa Pia",
+    "CF Estrela da Amadora": "Amadora",
+    "Estrela da Amadora": "Amadora",
+    "GD Estoril Praia": "Estoril",
+    "Estoril Praia": "Estoril",
+    "Arouca": "Arouca",
+    "FC Arouca": "Arouca",
+    "Boavista FC": "Boavista",
+    "Nacional": "Nacional",
+    "CD Nacional": "Nacional",
+    "AVS": "AVS",
 }
 # Also populate from the existing ELO_MAPPING (ClubELO -> short name)
 for elo_name, short_name in ELO_MAPPING.items():
@@ -76,19 +100,37 @@ def _save_cache(d: date, ratings: Dict[str, float]) -> None:
         json.dump(ratings, f, indent=2)
 
 
-def _fetch_and_cache(d: date) -> Dict[str, float]:
-    """Fetch ELO ratings for a date from ClubELO API and cache locally."""
+def _fetch_and_cache(d: date, countries: Optional[List[str]] = None) -> Dict[str, float]:
+    """Fetch ELO ratings for a date from ClubELO API and cache locally.
+
+    Args:
+        d: Date to fetch ratings for
+        countries: Country codes to include (e.g. ["ENG", "POR"]).
+                   Default ["ENG"]. ClubELO is UEFA-only, so no Brazil.
+    """
+    if countries is None:
+        countries = ["ENG"]
+
     cached = _load_cache(d)
     if cached is not None:
-        return cached
+        # Check if cached data already includes requested countries
+        # (if we previously cached ENG only but now need POR too, re-fetch)
+        cache_key = f"{d.isoformat()}_{'_'.join(sorted(countries))}"
+        cache_path_multi = CACHE_DIR / f"{cache_key}.json"
+        if cache_path_multi.exists():
+            with open(cache_path_multi) as f:
+                return json.load(f)
+        # If only one country and it's ENG, the old cache works
+        if countries == ["ENG"]:
+            return cached
 
     date_str = d.strftime("%Y-%m-%d")
     df = get_elo_for_date(date_str)
 
     ratings: Dict[str, float] = {}
     if df is not None and not df.empty:
-        df_eng = df[df["Country"] == "ENG"]
-        for _, row in df_eng.iterrows():
+        df_filtered = df[df["Country"].isin(countries)]
+        for _, row in df_filtered.iterrows():
             club_name = row["Club"]
             elo_value = float(row["Elo"])
             # Store under both ClubELO name and FotMob name
@@ -96,19 +138,35 @@ def _fetch_and_cache(d: date) -> Dict[str, float]:
             fotmob_name = ELO_MAPPING.get(club_name)
             if fotmob_name and fotmob_name != club_name:
                 ratings[fotmob_name] = elo_value
+            # Also check the FotMob-to-ELO reverse mapping
+            for fm_name, elo_name in _FOTMOB_TO_ELO.items():
+                if elo_name == club_name and fm_name not in ratings:
+                    ratings[fm_name] = elo_value
 
+    # Save with country-specific cache key
+    cache_key = f"{d.isoformat()}_{'_'.join(sorted(countries))}"
+    cache_path_multi = CACHE_DIR / f"{cache_key}.json"
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    with open(cache_path_multi, "w") as f:
+        json.dump(ratings, f, indent=2)
+
+    # Also save under the old path for backward compatibility
     _save_cache(d, ratings)
     return ratings
 
 
-def get_team_elo(team_name: str, match_date: date) -> Optional[float]:
+def get_team_elo(
+    team_name: str,
+    match_date: date,
+    countries: Optional[List[str]] = None,
+) -> Optional[float]:
     """
     Get pre-match ELO for a team.
 
     Uses match_date - 1 day to avoid same-day leakage.
     """
     pre_match_elo_date = match_date - timedelta(days=1)
-    ratings = _fetch_and_cache(pre_match_elo_date)
+    ratings = _fetch_and_cache(pre_match_elo_date, countries=countries)
 
     # Try direct lookup (team_name might already be a ClubELO name)
     if team_name in ratings:
@@ -128,21 +186,31 @@ def get_team_elo(team_name: str, match_date: date) -> Optional[float]:
     return None
 
 
-def bulk_fetch(match_dates: List[date], sleep_seconds: float = 0.2) -> None:
+def bulk_fetch(
+    match_dates: List[date],
+    sleep_seconds: float = 0.2,
+    countries: Optional[List[str]] = None,
+) -> None:
     """
     Pre-fetch and cache ELO ratings for all unique match dates.
 
     Uses match_date - 1 day for each date.
     """
+    if countries is None:
+        countries = ["ENG"]
+
     unique_dates = sorted(set(d - timedelta(days=1) for d in match_dates))
 
     fetched = 0
     skipped = 0
     for d in unique_dates:
-        if _load_cache(d) is not None:
+        # Check country-specific cache
+        cache_key = f"{d.isoformat()}_{'_'.join(sorted(countries))}"
+        cache_path = CACHE_DIR / f"{cache_key}.json"
+        if cache_path.exists():
             skipped += 1
             continue
-        _fetch_and_cache(d)
+        _fetch_and_cache(d, countries=countries)
         fetched += 1
         if fetched < len(unique_dates) - skipped:
             time.sleep(sleep_seconds)

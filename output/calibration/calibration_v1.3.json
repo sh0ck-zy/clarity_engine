@@ -1,0 +1,326 @@
+{
+  "model_version": "v1.3",
+  "created_at": "2026-02-26T11:41:39.196758",
+  "config": {
+    "C": 0.01,
+    "class_weight": "balanced",
+    "features": [
+      "xg_diff_last5_delta",
+      "form_points_delta",
+      "goal_diff_season_delta",
+      "position_delta",
+      "home_strength_delta",
+      "elo_delta",
+      "home_venue_points",
+      "away_venue_points",
+      "market_draw_signal",
+      "market_home_edge",
+      "market_entropy"
+    ]
+  },
+  "overall": {
+    "bins": [
+      {
+        "bin": "0%-10%",
+        "mean_predicted": 0.0795,
+        "mean_actual": 0.0,
+        "count": 7,
+        "gap": 0.0795
+      },
+      {
+        "bin": "10%-20%",
+        "mean_predicted": 0.1651,
+        "mean_actual": 0.1739,
+        "count": 46,
+        "gap": 0.0088
+      },
+      {
+        "bin": "20%-30%",
+        "mean_predicted": 0.2579,
+        "mean_actual": 0.2788,
+        "count": 165,
+        "gap": 0.0209
+      },
+      {
+        "bin": "30%-40%",
+        "mean_predicted": 0.3466,
+        "mean_actual": 0.3473,
+        "count": 239,
+        "gap": 0.0007
+      },
+      {
+        "bin": "40%-50%",
+        "mean_predicted": 0.441,
+        "mean_actual": 0.3981,
+        "count": 108,
+        "gap": 0.0429
+      },
+      {
+        "bin": "50%-60%",
+        "mean_predicted": 0.5406,
+        "mean_actual": 0.5769,
+        "count": 26,
+        "gap": 0.0363
+      },
+      {
+        "bin": "60%-70%",
+        "mean_predicted": 0.6127,
+        "mean_actual": 0.6,
+        "count": 5,
+        "gap": 0.0127
+      },
+      {
+        "bin": "70%-80%",
+        "mean_predicted": 0.7175,
+        "mean_actual": 1.0,
+        "count": 1,
+        "gap": 0.2825
+      },
+      {
+        "bin": "80%-90%",
+        "mean_predicted": null,
+        "mean_actual": null,
+        "count": 0,
+        "gap": null
+      },
+      {
+        "bin": "90%-100%",
+        "mean_predicted": null,
+        "mean_actual": null,
+        "count": 0,
+        "gap": null
+      }
+    ],
+    "ece": 0.0176,
+    "brier_score": 0.2130249838358459,
+    "n_predictions": 199,
+    "n_probability_pairs": 597
+  },
+  "per_class": {
+    "H": {
+      "bins": [
+        {
+          "bin": "0%-10%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "10%-20%",
+          "mean_predicted": 0.1725,
+          "mean_actual": 0.0625,
+          "count": 16,
+          "gap": 0.11
+        },
+        {
+          "bin": "20%-30%",
+          "mean_predicted": 0.2573,
+          "mean_actual": 0.3065,
+          "count": 62,
+          "gap": 0.0492
+        },
+        {
+          "bin": "30%-40%",
+          "mean_predicted": 0.3464,
+          "mean_actual": 0.4928,
+          "count": 69,
+          "gap": 0.1463
+        },
+        {
+          "bin": "40%-50%",
+          "mean_predicted": 0.4436,
+          "mean_actual": 0.4054,
+          "count": 37,
+          "gap": 0.0382
+        },
+        {
+          "bin": "50%-60%",
+          "mean_predicted": 0.5487,
+          "mean_actual": 0.6364,
+          "count": 11,
+          "gap": 0.0877
+        },
+        {
+          "bin": "60%-70%",
+          "mean_predicted": 0.6045,
+          "mean_actual": 1.0,
+          "count": 3,
+          "gap": 0.3955
+        },
+        {
+          "bin": "70%-80%",
+          "mean_predicted": 0.7175,
+          "mean_actual": 1.0,
+          "count": 1,
+          "gap": 0.2825
+        },
+        {
+          "bin": "80%-90%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "90%-100%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        }
+      ],
+      "ece": 0.0942
+    },
+    "D": {
+      "bins": [
+        {
+          "bin": "0%-10%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "10%-20%",
+          "mean_predicted": 0.1921,
+          "mean_actual": 0.5,
+          "count": 2,
+          "gap": 0.3079
+        },
+        {
+          "bin": "20%-30%",
+          "mean_predicted": 0.2612,
+          "mean_actual": 0.3143,
+          "count": 35,
+          "gap": 0.053
+        },
+        {
+          "bin": "30%-40%",
+          "mean_predicted": 0.3479,
+          "mean_actual": 0.2667,
+          "count": 120,
+          "gap": 0.0813
+        },
+        {
+          "bin": "40%-50%",
+          "mean_predicted": 0.4276,
+          "mean_actual": 0.2368,
+          "count": 38,
+          "gap": 0.1907
+        },
+        {
+          "bin": "50%-60%",
+          "mean_predicted": 0.5136,
+          "mean_actual": 0.25,
+          "count": 4,
+          "gap": 0.2636
+        },
+        {
+          "bin": "60%-70%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "70%-80%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "80%-90%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "90%-100%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        }
+      ],
+      "ece": 0.1032
+    },
+    "A": {
+      "bins": [
+        {
+          "bin": "0%-10%",
+          "mean_predicted": 0.0795,
+          "mean_actual": 0.0,
+          "count": 7,
+          "gap": 0.0795
+        },
+        {
+          "bin": "10%-20%",
+          "mean_predicted": 0.159,
+          "mean_actual": 0.2143,
+          "count": 28,
+          "gap": 0.0553
+        },
+        {
+          "bin": "20%-30%",
+          "mean_predicted": 0.2567,
+          "mean_actual": 0.2353,
+          "count": 68,
+          "gap": 0.0214
+        },
+        {
+          "bin": "30%-40%",
+          "mean_predicted": 0.3435,
+          "mean_actual": 0.34,
+          "count": 50,
+          "gap": 0.0035
+        },
+        {
+          "bin": "40%-50%",
+          "mean_predicted": 0.4535,
+          "mean_actual": 0.5758,
+          "count": 33,
+          "gap": 0.1222
+        },
+        {
+          "bin": "50%-60%",
+          "mean_predicted": 0.5423,
+          "mean_actual": 0.6364,
+          "count": 11,
+          "gap": 0.0941
+        },
+        {
+          "bin": "60%-70%",
+          "mean_predicted": 0.6251,
+          "mean_actual": 0.0,
+          "count": 2,
+          "gap": 0.6251
+        },
+        {
+          "bin": "70%-80%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "80%-90%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        },
+        {
+          "bin": "90%-100%",
+          "mean_predicted": null,
+          "mean_actual": null,
+          "count": 0,
+          "gap": null
+        }
+      ],
+      "ece": 0.0505
+    }
+  }
+}

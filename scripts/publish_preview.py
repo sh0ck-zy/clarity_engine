@@ -19,7 +19,7 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = PROJECT_ROOT / "src"
@@ -27,7 +27,7 @@ if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
 from models import config as model_config
-from models.feature_builder import build_feature_dataset
+from models.feature_builder import build_feature_dataset, _load_market_odds
 from models.probabilistic import predict_round
 from renderers.match_renderer import (
     classify_editorial,
@@ -38,6 +38,78 @@ from renderers.match_renderer import (
 )
 
 PUBLISH_LOG_DIR = PROJECT_ROOT / "output" / "publish_log"
+
+
+def print_scoreboard(
+    reports: List[Dict],
+    league_id: Optional[int] = None,
+) -> None:
+    """Print model vs market comparison scoreboard."""
+    ref = model_config.BENCHMARK_REF
+
+    # Load market odds for per-match comparison
+    market_odds = {}
+    if league_id is not None:
+        try:
+            market_odds = _load_market_odds(league_id=league_id)
+        except Exception:
+            pass
+
+    print(f"\n{'='*70}")
+    print(f"  MODEL vs MARKET  |  {model_config.MODEL_VERSION}  |  "
+          f"{len(model_config.FEATURE_COLS)} features")
+    print(f"{'='*70}")
+
+    # Benchmark numbers from config
+    if ref.get("log_loss"):
+        mkt_ll = ref.get("market_log_loss", 0)
+        mdl_ll = ref["log_loss"]
+        delta = mdl_ll - mkt_ll
+        pct = (delta / mkt_ll * 100) if mkt_ll else 0
+        direction = "market wins" if delta > 0 else "model wins"
+
+        print(f"  Model log loss:   {mdl_ll:.4f}  "
+              f"(R{ref['predict_rounds'][0]}-R{ref['predict_rounds'][-1]}, "
+              f"{ref['n_predictions']} preds)")
+        print(f"  Market log loss:  {mkt_ll:.4f}  (Bet365 closing)")
+        print(f"  Delta:           {delta:+.4f}  ({direction} by {abs(pct):.1f}%)")
+        print(f"  Model accuracy:   {ref['accuracy']:.1%}")
+        print(f"  Uniform baseline: {ref['uniform_log_loss']:.4f}  "
+              f"(model beats by {abs(ref.get('delta_vs_uniform', 0)):.1%})")
+    else:
+        print("  Benchmark not yet computed — run walk_forward_evaluate()")
+
+    print(f"{'='*70}")
+
+    # Per-match market comparison
+    if market_odds and reports:
+        print(f"\n  {'MATCH':<45s} {'MODEL':>8s} {'MARKET':>8s} {'DIFF':>8s}")
+        print(f"  {'-'*69}")
+        for report in reports:
+            home = report["fixture"]["home_team"]
+            away = report["fixture"]["away_team"]
+            p = report["probabilities"]
+            pred = report["prediction"]["predicted_result"]
+
+            key = (home, away)
+            if key in market_odds:
+                mkt_h, mkt_d, mkt_a = market_odds[key]
+                # Show the predicted outcome's probability comparison
+                if pred == "H":
+                    mdl_p, mkt_p, label = p["home_win"], mkt_h, "H"
+                elif pred == "A":
+                    mdl_p, mkt_p, label = p["away_win"], mkt_a, "A"
+                else:
+                    mdl_p, mkt_p, label = p["draw"], mkt_d, "D"
+
+                diff = mdl_p - mkt_p
+                match_str = f"{home[:20]} vs {away[:20]}"
+                print(f"  {match_str:<45s} {mdl_p:>7.1%} {mkt_p:>7.1%} {diff:>+7.1%}  [{label}]")
+            else:
+                match_str = f"{home[:20]} vs {away[:20]}"
+                print(f"  {match_str:<45s} {'—':>8s} {'no odds':>8s}")
+
+        print()
 
 
 def preview_round(
@@ -227,6 +299,12 @@ def main() -> int:
         help="Allow ELO missing rate > 5%%",
     )
     parser.add_argument(
+        "--league-id",
+        type=int,
+        default=None,
+        help="FotMob league ID to filter by (47=PL, 61=Portugal, 268=Brazil)",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=PUBLISH_LOG_DIR,
@@ -239,10 +317,13 @@ def main() -> int:
     print(f"Motor: {model_config.MODEL_VERSION} | C={model_config.C} | "
           f"Features: {len(model_config.FEATURE_COLS)}")
     print("Building feature dataset...")
-    df = build_feature_dataset(allow_missing_elo=args.allow_missing_elo)
+    df = build_feature_dataset(allow_missing_elo=args.allow_missing_elo, league_id=args.league_id)
 
     print(f"Predicting Round {args.round}...")
     reports = predict_round(args.round, df=df)
+
+    # Scoreboard: model vs market
+    print_scoreboard(reports, league_id=args.league_id)
 
     # Preview
     buckets = preview_round(reports, show_all=args.all, backtest=args.backtest)

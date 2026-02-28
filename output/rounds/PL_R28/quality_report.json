@@ -1,0 +1,61 @@
+{
+  "round": "PL_R28",
+  "mean_mis": 0.938,
+  "min_mis": 0.938,
+  "max_mis": 0.938,
+  "matches_below_threshold": 0,
+  "threshold": 0.7,
+  "per_match": [
+    {
+      "match": "Arsenal_vs_Chelsea",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Bournemouth_vs_Sunderland",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Brighton_vs_Nottm_Forest",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Burnley_vs_Brentford",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Fulham_vs_Spurs",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Leeds_vs_Man_City",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Liverpool_vs_West_Ham",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Man_Utd_vs_C_Palace",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Newcastle_vs_Everton",
+      "mis": 0.938,
+      "passed": true
+    },
+    {
+      "match": "Wolves_vs_Aston_Villa",
+      "mis": 0.938,
+      "passed": true
+    }
+  ],
+  "checked_at": "2026-02-28T17:25:12.307260"
+}

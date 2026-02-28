@@ -1,0 +1,101 @@
+{
+  "report_id": "fa9d73c9dc",
+  "schema_version": "1.0",
+  "model_version": "v1.4",
+  "fixture": {
+    "fixture_id": "4813647",
+    "round_number": 28,
+    "match_date": "2026-03-01",
+    "home_team": "Brighton & Hove Albion",
+    "away_team": "Nottingham Forest"
+  },
+  "probabilities": {
+    "home_win": 0.3391,
+    "draw": 0.3929,
+    "away_win": 0.268
+  },
+  "prediction": {
+    "predicted_result": "D",
+    "confidence": "low",
+    "p_max": 0.3929,
+    "margin_top2": 0.0538,
+    "entropy_norm": 0.9891
+  },
+  "drivers": [
+    {
+      "feature": "away_venue_points",
+      "value": 14.0,
+      "contribution": 0.0762,
+      "direction": "for"
+    },
+    {
+      "feature": "home_venue_points",
+      "value": 21.0,
+      "contribution": 0.0524,
+      "direction": "for"
+    },
+    {
+      "feature": "goal_diff_season_delta",
+      "value": 16.0,
+      "contribution": 0.0227,
+      "direction": "for"
+    },
+    {
+      "feature": "position_delta",
+      "value": 3.0,
+      "contribution": 0.0177,
+      "direction": "for"
+    },
+    {
+      "feature": "elo_delta",
+      "value": 54.08,
+      "contribution": -0.0108,
+      "direction": "against"
+    }
+  ],
+  "risk_flags": [
+    "near_uniform"
+  ],
+  "metadata": {
+    "train_size": 260,
+    "train_rounds": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "feature_subset": [
+      "xg_diff_last5_delta",
+      "form_points_delta",
+      "goal_diff_season_delta",
+      "position_delta",
+      "home_strength_delta",
+      "elo_delta",
+      "home_venue_points",
+      "away_venue_points"
+    ],
+    "C": 0.01
+  }
+}

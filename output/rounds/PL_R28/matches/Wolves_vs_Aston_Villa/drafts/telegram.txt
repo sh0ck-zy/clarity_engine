@@ -1,0 +1,5 @@
+R28 | Wolverhampton Wanderers vs Aston Villa
+H 11.7%  D 28.7%  A 59.6%
+Strong lean: Away Win
+Key factors: Goal diff gap (-43.0), ELO rating gap (-252.0), Form gap (-7.0)
+[v1.4 | cdb4b9e321]

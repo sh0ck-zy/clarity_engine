@@ -92,15 +92,19 @@ CREATE TABLE team_states (
     home_points INTEGER DEFAULT 0,
     away_points INTEGER DEFAULT 0,
     
+    -- LEAGUE
+    league_id INTEGER NOT NULL DEFAULT 47,
+
     -- META
     computed_at TIMESTAMP DEFAULT now(),
-    
-    UNIQUE(team_id, round_number)
+
+    UNIQUE(team_id, round_number, league_id)
 );
 
 CREATE INDEX idx_team_states_team ON team_states(team_id);
 CREATE INDEX idx_team_states_round ON team_states(round_number);
 CREATE INDEX idx_team_states_position ON team_states(round_number, position);
+CREATE INDEX idx_team_states_league ON team_states(league_id);
 
 -- ============================================
 -- PLAYER_STATES (state per player per round)
@@ -135,10 +139,13 @@ CREATE TABLE player_states (
     assists_per_90 DECIMAL(4,2),
     xg_per_90 DECIMAL(4,2),
     
+    -- LEAGUE
+    league_id INTEGER NOT NULL DEFAULT 47,
+
     -- META
     computed_at TIMESTAMP DEFAULT now(),
-    
-    UNIQUE(player_id, round_number)
+
+    UNIQUE(player_id, round_number, league_id)
 );
 
 CREATE INDEX idx_player_states_player ON player_states(player_id);

@@ -1,0 +1,6 @@
+R28 Liverpool vs West Ham
+H 40.7% D 39.3% A 20%
+Tight call: Home Win
+Driver: ELO rating gap
+Coin flip territory
+[v1.4 | fbd993e9c4]
