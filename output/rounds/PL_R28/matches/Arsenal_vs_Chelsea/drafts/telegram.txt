@@ -1,5 +1,0 @@
-R28 | Arsenal vs Chelsea
-H 29.9%  D 43.8%  A 26.3%
-Game to watch: Draw profile
-Key factors: Away record (+22.0), Home ground strength (+32.0), ELO rating gap (+139.8, working against)
-[v1.4 | d78c6df911]

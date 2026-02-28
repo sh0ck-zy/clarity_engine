@@ -1,3 +1,0 @@
-It appears that there is no available data for either Brighton & Hove Albion or Fulham at round 0, which limits my ability to perform a thorough analysis for this match. Without recent form, key player statistics, or head-to-head data, it's challenging to provide a meaningful prediction or insights.
-
-If you have specific elements of the match you'd like to investigate, or if there's a different fixture you'd like me to analyze, please let me know!

@@ -1,5 +1,0 @@
-R28 Leeds vs Man City
-H 14.4% D 32.7% A 52.9%
-Moderate lean: Away Win
-Driver: Goal diff gap
-[v1.4 | cecdb8b8e1]

@@ -14,12 +14,28 @@ venv/
 
 # Jupyter
 .ipynb_checkpoints
+notebooks/
 
 # Archive (local reference only)
 archive/
+
+# Generated output (local only)
+output/
+
+# Agent workspace & config (local only)
+agent_workspace/
+.openclaw/
+AGENTS.md
+BOOTSTRAP.md
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+STATUS.md
+TASK.md
+TOOLS.md
+USER.md
 
 # Project Data
 data/
 !src/data/
 !src/data/**
-__pycache__/

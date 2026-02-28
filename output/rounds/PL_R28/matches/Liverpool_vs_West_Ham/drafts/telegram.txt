@@ -1,6 +1,0 @@
-R28 | Liverpool vs West Ham United
-H 40.7%  D 39.3%  A 20%
-Tight call: Home Win
-Key factors: ELO rating gap (+210.0), Goal diff gap (+24.0), Away record (+13.0, working against)
-Note: Very slim margin between outcomes
-[v1.4 | fbd993e9c4]

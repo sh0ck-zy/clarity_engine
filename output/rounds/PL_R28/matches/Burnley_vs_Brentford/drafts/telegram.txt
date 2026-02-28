@@ -1,5 +1,0 @@
-R28 | Burnley vs Brentford
-H 20.5%  D 33.1%  A 46.4%
-Game to watch: Away Win profile
-Key factors: Goal diff gap (-26.0), ELO rating gap (-140.2), Table position gap (-12.0)
-[v1.4 | 9a1f852218]

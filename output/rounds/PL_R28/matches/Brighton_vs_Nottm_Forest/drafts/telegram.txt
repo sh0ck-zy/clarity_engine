@@ -1,6 +1,0 @@
-R28 | Brighton & Hove Albion vs Nottingham Forest
-H 33.9%  D 39.3%  A 26.8%
-Tight call: Draw
-Key factors: Away record (+14.0), Home ground strength (+21.0), Goal diff gap (+16.0)
-Note: Model sees this as a coin flip
-[v1.4 | fa9d73c9dc]

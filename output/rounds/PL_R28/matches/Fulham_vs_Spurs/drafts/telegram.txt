@@ -1,5 +1,0 @@
-R28 | Fulham vs Tottenham Hotspur
-H 29.4%  D 43.4%  A 27.2%
-Game to watch: Draw profile
-Key factors: Away record (+19.0), Home ground strength (+23.0), Table position gap (+6.0)
-[v1.4 | 43c0c737e7]

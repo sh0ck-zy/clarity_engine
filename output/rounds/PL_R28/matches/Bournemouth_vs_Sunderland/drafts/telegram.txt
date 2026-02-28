@@ -1,6 +1,0 @@
-R28 | AFC Bournemouth vs Sunderland
-H 41.8%  D 37.6%  A 20.7%
-Tight call: Home Win
-Key factors: ELO rating gap (+149.9), Form gap (+8.0), xG advantage (last 5) (+4.2)
-Note: Very slim margin between outcomes
-[v1.4 | 41919e4e6c]

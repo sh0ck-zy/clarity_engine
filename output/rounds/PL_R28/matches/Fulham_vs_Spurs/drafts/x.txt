@@ -1,5 +1,0 @@
-R28 Fulham vs Spurs
-H 29.4% D 43.4% A 27.2%
-Game to watch: Draw profile
-Driver: Away record
-[v1.4 | 43c0c737e7]
