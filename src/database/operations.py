@@ -32,14 +32,18 @@ def save_fixture(conn, fixture_data):
 def save_team_stats(conn, stats_list):
     """
     Saves a list of team stats (usually 2 rows per match).
-    stats_list: list of tuples(fixture_id, team_name, is_home, xg, xga, ppda, field_tilt)
+    stats_list: list of tuples(fixture_id, team_name, is_home, xg, xga, ppda, field_tilt, elo)
+    Note: elo should be None when inserting; existing elo values are preserved on conflict.
     """
     sql = """
-    INSERT INTO team_stats (fixture_id, team_name, is_home, xg, xga, ppda, field_tilt)
+    INSERT INTO team_stats (fixture_id, team_name, is_home, xg, xga, ppda, field_tilt, elo)
     VALUES %s
     ON CONFLICT (fixture_id, team_name) DO UPDATE SET
         xg = EXCLUDED.xg,
-        xga = EXCLUDED.xga;
+        xga = EXCLUDED.xga,
+        ppda = EXCLUDED.ppda,
+        field_tilt = EXCLUDED.field_tilt,
+        elo = COALESCE(team_stats.elo, EXCLUDED.elo);
     """
     try:
         cur = conn.cursor()

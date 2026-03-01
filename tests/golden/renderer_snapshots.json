@@ -1,0 +1,8 @@
+{
+  "telegram_high": "R11 | Chelsea vs Wolverhampton Wanderers\nH 64.5%  D 19.8%  A 15.8%\nStrong lean: Home Win\nKey factors: Goal diff gap (+22.0), ELO rating gap (+215.9), Home ground strength (+7.0)\n[v1.1 | test_high_1]",
+  "x_high": "R11 Chelsea vs Wolves\nH 64.5% D 19.8% A 15.8%\nStrong lean: Home Win\nDriver: Goal diff gap\n[v1.1 | test_high_1]",
+  "telegram_medium": "R8 | Crystal Palace vs AFC Bournemouth\nH 51.7%  D 24.6%  A 23.7%\nModerate lean: Home Win\nKey factors: xG advantage (last 5) (+3.1), ELO rating gap (+25.7)\n[v1.1 | test_med_1]",
+  "x_medium": "R8 C. Palace vs Bournemouth\nH 51.7% D 24.6% A 23.7%\nModerate lean: Home Win\nDriver: xG advantage (last 5)\n[v1.1 | test_med_1]",
+  "telegram_flagged": "R8 | Burnley vs Leeds United\nH 41.5%  D 27%  A 31.6%\nTight call: Home Win\nKey factors: xG advantage (last 5) (-8.6, working against)\nNote: Model sees this as a coin flip\n[v1.1 | test_flag_1]",
+  "x_flagged": "R8 Burnley vs Leeds\nH 41.5% D 27% A 31.6%\nTight call: Home Win\nDriver: xG advantage (last 5)\nCoin flip territory\n[v1.1 | test_flag_1]"
+}
