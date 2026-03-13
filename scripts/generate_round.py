@@ -176,6 +176,9 @@ def generate_round(
     league: str = "PL",
     league_id: int = 47,
     season: str = "2025/26",
+    intelligence: bool = False,
+    mi_model: str = "gpt-4o",
+    regenerate: bool = False,
 ) -> Path:
     """Generate all round artifacts. Returns the round directory path."""
     print(f"Motor: {model_config.MODEL_VERSION} | C={model_config.C} | "
@@ -261,7 +264,102 @@ def generate_round(
         with open(drafts_dir / "x.txt", "w") as f:
             f.write(x)
 
-    # 8. Print summary
+    # 8. v1.5 Match Intelligence Engine (if --intelligence)
+    if intelligence:
+        print("\n" + "=" * 60)
+        print("  v1.5 MATCH INTELLIGENCE ENGINE")
+        print("=" * 60)
+
+        from intelligence.match_pack_builder import build_match_pack, build_ml_anchor
+        from intelligence.match_signals import compute_match_signals
+        from intelligence.match_intelligence import (
+            MatchIntelligenceEngine,
+            render_intelligence_text,
+        )
+        from evaluation.intelligence_validator import (
+            IntelligenceValidator,
+            build_evaluation_record,
+        )
+
+        mi_engine = MatchIntelligenceEngine(model=mi_model)
+        mi_validator = IntelligenceValidator()
+
+        for report in reports:
+            home = report["fixture"]["home_team"]
+            away = report["fixture"]["away_team"]
+            fixture_id = report["fixture"]["fixture_id"]
+            match_date = report["fixture"].get("match_date", "")
+            folder = match_folder_name(home, away)
+            match_dir = rdir / "matches" / folder
+
+            print(f"\n  {home} vs {away}")
+
+            try:
+                # Step 1: Build match pack (no LLM)
+                print("    Building match pack...")
+                match_pack = build_match_pack(
+                    home_team=home,
+                    away_team=away,
+                    round_number=round_number,
+                    league_id=league_id,
+                    league_name=league,
+                    fixture_id=str(fixture_id),
+                    match_date=match_date,
+                )
+                with open(match_dir / "match_pack.json", "w") as f:
+                    json.dump(match_pack, f, indent=2, default=str, ensure_ascii=False)
+
+                # Step 2: Build ML anchor (reshape report)
+                ml_anchor = build_ml_anchor(report)
+                with open(match_dir / "ml_anchor.json", "w") as f:
+                    json.dump(ml_anchor, f, indent=2, default=str)
+
+                # Step 3: Compute match signals (no LLM)
+                print("    Computing signals...")
+                signals = compute_match_signals(match_pack, ml_anchor)
+                with open(match_dir / "match_signals.json", "w") as f:
+                    json.dump(signals, f, indent=2, default=str)
+
+                # Step 4: Generate match intelligence (LLM)
+                print("    Reading the game...")
+                mi_result = mi_engine.generate(
+                    match_pack=match_pack,
+                    ml_anchor=ml_anchor,
+                    match_signals=signals,
+                    cache_path=match_dir / "match_intelligence.json",
+                    regenerate=regenerate,
+                )
+
+                # Step 5: Validate
+                validation = mi_validator.validate(mi_result, ml_anchor)
+                print(f"    Validator score: {validation.score:.1f}/100"
+                      f" ({'PASS' if validation.score >= 60 else 'FAIL'})")
+                if validation.issues:
+                    for issue in validation.issues[:3]:
+                        print(f"      - [{issue['check']}] {issue['issue']}")
+
+                # Step 6: Render plaintext
+                mi_text = render_intelligence_text(mi_result)
+                with open(match_dir / "match_intelligence.txt", "w") as f:
+                    f.write(mi_text)
+
+                # Step 7: Evaluation record
+                eval_record = build_evaluation_record(
+                    match_pack, ml_anchor, signals, mi_result, validation
+                )
+                with open(match_dir / "evaluation_record.json", "w") as f:
+                    json.dump(eval_record, f, indent=2, default=str, ensure_ascii=False)
+
+                print(f"    Done: {mi_result.get('lean', '?')}")
+
+            except Exception as e:
+                print(f"    FAILED: {e}")
+                import traceback
+                traceback.print_exc()
+
+        print("\n  Match Intelligence complete for all matches")
+
+    # 9. Print summary
     print(f"\nRound generated: {rdir}")
     print(f"  {len(reports)} matches")
 
@@ -295,10 +393,24 @@ def main() -> int:
     parser.add_argument("--league-id", type=int, default=47,
                         help="FotMob league ID (47=PL, 61=Portugal, 268=Brazil)")
     parser.add_argument("--season", default="2025/26", help="Season (default: 2025/26)")
+    parser.add_argument("--intelligence", action="store_true",
+                        help="Use v1.5 Match Intelligence Engine (game reading)")
+    parser.add_argument("--mi-model", default="gpt-4o",
+                        help="LLM model for Match Intelligence (default: gpt-4o)")
+    parser.add_argument("--regenerate", action="store_true",
+                        help="Force regenerate (skip cache)")
 
     args = parser.parse_args()
 
-    generate_round(args.round, league=args.league, league_id=args.league_id, season=args.season)
+    generate_round(
+        args.round,
+        league=args.league,
+        league_id=args.league_id,
+        season=args.season,
+        intelligence=args.intelligence,
+        mi_model=args.mi_model,
+        regenerate=args.regenerate,
+    )
     return 0
 
 
