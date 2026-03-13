@@ -269,6 +269,10 @@ _LEAGUE_ODDS_CONFIG = {
         "csv": "E0_2526.csv",
         "format": "standard",  # HomeTeam, AwayTeam, B365H/D/A columns
     },
+    57: {  # Eredivisie
+        "csv": "N1_2526.csv",
+        "format": "standard",
+    },
     61: {  # Liga Portugal
         "csv": "P1_2526.csv",
         "format": "standard",
@@ -283,6 +287,7 @@ _LEAGUE_ODDS_CONFIG = {
 # League ID -> ELO country codes
 _LEAGUE_COUNTRIES = {
     47: ["ENG"],
+    57: ["NED"],
     61: ["POR"],
     268: [],  # ClubELO doesn't cover Brazil
 }
@@ -556,7 +561,9 @@ def build_feature_dataset(
     if odds_lookup:
         df = _merge_market_odds(df, odds_lookup)
     else:
-        print("  No market odds data found, skipping")
+        print("  No market odds data found, filling NaN")
+        for col in ["market_prob_H", "market_prob_D", "market_prob_A"]:
+            df[col] = np.nan
 
     # Check ELO coverage
     all_teams = list(df["home_team_name"]) + list(df["away_team_name"])

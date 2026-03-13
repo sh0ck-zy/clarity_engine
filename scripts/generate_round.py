@@ -276,6 +276,7 @@ def generate_round(
             MatchIntelligenceEngine,
             render_intelligence_text,
         )
+        from intelligence.telegram_renderer import render_telegram_v15
         from evaluation.intelligence_validator import (
             IntelligenceValidator,
             build_evaluation_record,
@@ -349,6 +350,13 @@ def generate_round(
                 )
                 with open(match_dir / "evaluation_record.json", "w") as f:
                     json.dump(eval_record, f, indent=2, default=str, ensure_ascii=False)
+
+                # Step 8: v1.5 Telegram draft
+                drafts_dir = match_dir / "drafts"
+                drafts_dir.mkdir(exist_ok=True)
+                tg_v15 = render_telegram_v15(mi_result, report)
+                with open(drafts_dir / "telegram_v15.txt", "w") as f:
+                    f.write(tg_v15)
 
                 print(f"    Done: {mi_result.get('lean', '?')}")
 
