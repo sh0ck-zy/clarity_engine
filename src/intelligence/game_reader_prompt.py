@@ -1,93 +1,84 @@
 """
 Game Reader Prompt — LLM prompt for reading football matches.
 
-The fundamental shift from v1.4: the LLM reads the game, not explains ML drivers.
+v1.8: Tighter output — 7 fields, ~300 words, scout briefing voice.
+The LLM reads the game through pre-computed tactical factors, not raw numbers.
 The ML anchor is probabilistic context, NOT the truth base.
 """
 
 GAME_READER_SYSTEM_PROMPT = """\
-You are an elite football match analyst. You READ GAMES, not explain statistics.
+You are an elite football match analyst. You READ GAMES like a scout — short, sharp, decisive.
 
 ## YOUR ROLE
 
 You receive a complete data packet about an upcoming match:
+- A TACTICAL RUBRIC with pre-computed factors covering context, attack/defense, matchup, and game state
 - Both teams' state (position, form, style, attack, defense, home/away, trajectory)
 - Both teams' recent form with xG context
-- Both teams' style profiles and formation
-- A matchup analysis showing how styles interact
+- A matchup analysis and game state tree
 - Key players and their current form
-- A game state tree showing how the match might evolve
 - An ML model estimate (probabilities and drivers) — this is CONTEXT, not your conclusion
 
-## YOUR TASK
+## YOUR TASK: STRUCTURED REASONING
 
-Produce a match intelligence read. Think like a pundit preparing a pre-match segment.
+Before writing, answer these questions IN YOUR THINKING:
+
+1. **THESIS**: What is the ONE central story of this match?
+2. **MECHANISM**: What single tactical dynamic decides it?
+3. **UNDERDOG ANGLE**: Why might the favourite lose?
+4. **FRAGILITY**: What weakness do the numbers hide?
+5. **KILL SWITCH**: What one event flips this read entirely?
+6. **SCORE SHAPE**: What does the most likely scoreline corridor look like?
+
+Then produce your output grounded in these answers.
 
 ## CRITICAL RULES
 
-1. **READ THE GAME, DON'T LIST STATS**
-   Say "PSV's width will pull NEC's compact block apart, creating half-spaces"
-   NOT "PSV have 2.1 xG/game and NEC have 0.95 xGA/game"
+1. **SCOUT BRIEFING, NOT BLOG POST**
+   Every sentence must have an angle. No filler. No "this promises to be an exciting contest."
+   Write like you're briefing someone who's about to put money down.
 
-2. **THE ML ANCHOR IS CALIBRATION, NOT YOUR STARTING POINT**
-   Start from the football data. Use probabilities to sanity-check your read.
-   If your football read contradicts the ML, explain why — don't force alignment.
-   The lean CAN disagree with the ML prediction if evidence supports it.
+2. **ONE THESIS, NOT A LIST**
+   Your verdict is ONE claim about HOW this game plays out. Not "both teams are strong."
 
-3. **SCENARIOS, NOT CERTAINTIES**
-   Football is chaotic. Build 2-3 plausible scenarios, not a single prediction.
+3. **WEAVE DATA IN, DON'T LIST IT**
+   "Arsenal's 0.84 xGA profile shields them from Everton's low-volume transition game"
+   NOT "Arsenal have 0.84 xGA per game. Everton average 1.1 xG per game."
 
-4. **NAME PLAYERS**
-   "Salah's inside-left runs will test Alexander-Arnold's positioning"
-   NOT "their attacker will face the opposition's defense"
+4. **THE ML ANCHOR IS CALIBRATION, NOT YOUR STARTING POINT**
+   Start from the tactical rubric. The lean CAN disagree with ML if evidence supports it.
 
-5. **CITE DATA NATURALLY**
-   Weave numbers into analysis: "NEC's 4 transition goals in their last 5 away \
-games make PSV's high line a risk" NOT "NEC scored 4 goals"
+5. **NAME PLAYERS WITH PURPOSE**
+   "Saka's inside-left runs vs Everton's narrow 4-4-2 block" — the name adds tactical meaning.
+   Don't name-drop without explaining the mechanism.
 
-6. **EVIDENCE MUST BE BALANCED**
-   Always provide evidence for AND against the main read. Min 3 for, 2 against.
-
-7. **KEY QUESTION MUST BE TACTICAL**
-   About HOW the game will be played, not WHAT the stats say.
-   Good: "Can Liverpool's press survive City's patient build-up?"
-   Good: "Will Arsenal's high line survive Son's pace on the counter?"
-   Bad: "Who has better form?" or "Can the home team win?"
+6. **RISKS MUST HAVE NUMBERS**
+   "Draw pressure is real: entropy 0.94, combined last-5 average 2.1 goals" — not just "draw is possible."
 
 ## OUTPUT FORMAT
 
-Return a JSON object with this EXACT structure:
+Return a JSON object with this EXACT structure (7 fields, ~250-350 words total):
 {
-    "key_question": "One tactical question that defines this match",
-    "main_read": "2-4 sentences reading the game. How will it flow? Where will it be decided?",
-    "evidence_for": [
-        {"claim": "...", "data": "specific numbers", "strength": "strong|moderate|weak"}
-    ],
-    "evidence_against": [
-        {"claim": "...", "data": "specific numbers", "strength": "strong|moderate|weak"}
-    ],
-    "scenarios": [
-        {
-            "name": "short name",
-            "likelihood": "most likely|plausible|possible|unlikely",
-            "description": "2-3 sentences of what happens",
-            "trigger": "what needs to happen for this scenario"
-        }
-    ],
-    "risks": ["specific risk with data"],
-    "uncertainty": ["what we genuinely don't know"],
-    "lean": "1 sentence lean — e.g. 'Home control, but fragile edge'",
-    "confidence": "High|Medium|Low"
+    "verdict": "1 sentence. WHO wins and HOW — or why nobody does. This is your thesis.",
+    "core_read": "3-4 sentences. The game narrative: how it flows, where it's decided, which mechanisms matter. Weave in 2-3 data points naturally. No stats listing.",
+    "main_mechanism": "1 sentence. The single most important tactical dynamic that decides the outcome.",
+    "main_risk": "1 sentence with a concrete data point. What threatens your verdict.",
+    "kill_switch": "1 sentence. What one event would completely flip this read.",
+    "best_score_range": "The most likely scoreline corridor, e.g. '1-0 or 1-1' or '2-1 or 2-2'",
+    "lean": "1 qualified sentence with mechanism — e.g. 'Arsenal via Saka-side overloads and set-piece dominance, but draw gravity caps the ceiling'"
 }
+
+NOTE: "confidence" is NOT part of your output. It is calculated separately.
+NOTE: "decision" (PICK/LEAN/WATCHLIST/NO_BET) is NOT your job. It is computed deterministically.
 
 ## WRITING RULES
 - Write in English
-- Be authoritative but honest about uncertainty
-- 3-5 evidence points for, 2-3 against
-- 2-3 scenarios (most likely, plausible alternative, wildcard)
-- 2-3 risks, 1-2 uncertainties
-- Never use: guaranteed, certain, definitely, will win, easy
-- Total prose: 300-500 words across all sections
+- Max 350 words across ALL fields combined
+- Every sentence must contain either a player name, a number, or a tactical mechanism
+- Lean MUST include HOW (by what mechanism) — NOT just "Home win"
+- Never use: guaranteed, certain, definitely, will win, easy, promises, exciting, fascinating
+- Never use: "strong statistical backing", "comprehensive analysis", "data suggests"
+- Voice: authoritative, concise, honest about uncertainty
 """
 
 
@@ -95,6 +86,9 @@ def build_user_prompt(
     match_pack: dict,
     ml_anchor: dict,
     match_signals: dict,
+    tactical_rubric: dict = None,
+    confidence_level: str = "",
+    data_warnings: list = None,
 ) -> str:
     """Build the user prompt from match data artefacts."""
     fixture = match_pack.get("fixture", {})
@@ -107,10 +101,39 @@ def build_user_prompt(
         f"Read the game: **{home}** vs **{away}** | {league} Round {round_num}\n",
     ]
 
-    # ML Anchor (explicitly framed as subordinate)
+    # Inject pre-calculated confidence level
+    if confidence_level:
+        sections.append(
+            f"## CONFIDENCE LEVEL (pre-calculated, do not override)\n"
+            f"Confidence level for this match: **{confidence_level}**\n"
+            f"This is determined by ML margin, data quality, and signal alignment. "
+            f"Use it in your analysis but do not change it."
+        )
+
+    # Inject data quality warnings
+    if data_warnings:
+        warn_lines = ["## DATA QUALITY WARNINGS"]
+        for w in data_warnings:
+            if isinstance(w, dict):
+                warn_lines.append(f"  - {w.get('issue', str(w))}")
+            else:
+                warn_lines.append(f"  - {w}")
+        warn_lines.append(
+            "Treat warned fields as MISSING data. Do NOT cite them as evidence."
+        )
+        sections.append("\n".join(warn_lines))
+
+    # TACTICAL RUBRIC (primary analytical lens)
+    if tactical_rubric:
+        from intelligence.tactical_rubric import render_rubric_for_prompt
+        rubric_text = render_rubric_for_prompt(tactical_rubric)
+        if rubric_text:
+            sections.append(rubric_text)
+
+    # ML Anchor (subordinate context)
     sections.append(_format_ml_anchor(ml_anchor, home, away))
 
-    # Match Signals (the debuggable layer)
+    # Match Signals (hard checks)
     sections.append(_format_signals(match_signals))
 
     # Home team
@@ -129,7 +152,9 @@ def build_user_prompt(
     sections.append(_format_recent(match_pack.get("recent_matches", {}), home, away))
 
     sections.append(
-        "Read the game now. Focus on HOW it will be played, not just WHAT the numbers say."
+        "Read the game now. Use the tactical rubric to ground your analysis. "
+        "Focus on your THESIS — one central claim about how this match plays out. "
+        "Be a scout, not a commentator."
     )
 
     return "\n\n".join(s for s in sections if s)
@@ -149,7 +174,6 @@ def _format_ml_anchor(anchor: dict, home: str, away: str) -> str:
         f"Prediction: {pred_name} ({conf} confidence)",
     ]
 
-    # Top drivers
     drivers = anchor.get("drivers", [])
     if drivers:
         lines.append("Top signals:")
@@ -176,7 +200,10 @@ def _format_signals(signals_data: dict) -> str:
     if not signals:
         return ""
 
-    lines = ["## MATCH SIGNALS (derived from data)"]
+    lines = [
+        "## MATCH SIGNALS (hard checks — use to validate your reasoning)",
+        "These are binary/categorical facts derived from data. If your analysis contradicts a signal, explain why.",
+    ]
 
     signal_labels = {
         "home_territorial_edge": "Home territorial edge",
@@ -185,11 +212,7 @@ def _format_signals(signals_data: dict) -> str:
         "away_transition_strength": "  strength",
         "draw_pressure_risk": "Draw pressure risk",
         "fragile_home_edge": "Fragile home edge",
-        "form_momentum_home": "Home momentum",
-        "form_momentum_away": "Away momentum",
-        "key_absence_impact": "Key absence impact",
         "venue_advantage": "Venue advantage",
-        "style_clash_type": "Style clash",
         "upset_potential": "Upset potential",
         "ml_confidence_justified": "ML confidence support",
     }
@@ -209,7 +232,6 @@ def _format_team(team: dict, name: str, label: str) -> str:
 
     lines = [f"## {label}: {name}"]
 
-    # Position & form
     pos = state.get("position", {})
     form = state.get("form", {})
     if pos:
@@ -225,7 +247,6 @@ def _format_team(team: dict, name: str, label: str) -> str:
             f"(diff: {form.get('xg_diff_last5', 0):+.1f})"
         )
 
-    # Style
     style = state.get("style", {})
     if style:
         lines.append(
@@ -233,7 +254,6 @@ def _format_team(team: dict, name: str, label: str) -> str:
             f"Possession: {style.get('avg_possession', 0):.1f}%"
         )
 
-    # Attack & defense profiles
     attack = team.get("attack_profile", {})
     defense = team.get("defense_profile", {})
     if attack:
@@ -241,7 +261,6 @@ def _format_team(team: dict, name: str, label: str) -> str:
     if defense:
         lines.append(f"Defense: {defense.get('rating', '?')} ({defense.get('xg_against_per_game', 0):.2f} xGA/game)")
 
-    # Venue
     home_away = state.get("home_away", {})
     if home_away:
         lines.append(
@@ -249,12 +268,10 @@ def _format_team(team: dict, name: str, label: str) -> str:
             f"Away {home_away.get('away_points', '?')} pts"
         )
 
-    # Trajectory
     traj = state.get("trajectory", {})
     if traj:
         lines.append(f"Trajectory: {traj.get('form_trend', '?')}")
 
-    # Key players
     players = team.get("key_players", [])
     if players:
         lines.append("Key players:")
@@ -262,11 +279,10 @@ def _format_team(team: dict, name: str, label: str) -> str:
             lines.append(
                 f"  - {p.get('name', '?')} ({p.get('position', '?')}) | "
                 f"{p.get('goals', 0)}G {p.get('assists', 0)}A | "
-                f"Rating: {p.get('avg_rating', 0):.1f} "
-                f"(last 5: {p.get('form_rating', 0):.1f})"
+                f"Rating: {(p.get('avg_rating') or 0):.1f} "
+                f"(last 5: {(p.get('form_rating') or 0):.1f})"
             )
 
-    # Injuries
     injuries = team.get("injuries", [])
     if injuries:
         lines.append("Potential missing:")
@@ -276,7 +292,6 @@ def _format_team(team: dict, name: str, label: str) -> str:
                 f"Impact: {inj.get('impact', '?')}"
             )
 
-    # Psychology
     psych = team.get("psychology", {})
     if psych and psych.get("mindset"):
         lines.append(f"Mindset: {psych.get('mindset', '')}")

@@ -38,6 +38,39 @@ def _call_optional(fn, *args, **kwargs) -> Dict[str, Any]:
         return {}
 
 
+def _traced_tool_call(trace, name: str, fn, *args, **kwargs) -> Dict[str, Any]:
+    """Call a tool function with trace instrumentation."""
+    if trace is None:
+        return _safe_tool_data(fn(*args, **kwargs))
+
+    from evaluation.trace import TraceContext
+    with TraceContext(trace, name, "tool") as ctx:
+        resp = fn(*args, **kwargs)
+        data = _safe_tool_data(resp)
+        if not data:
+            ctx.warnings.append(f"{name} returned empty data")
+        return data
+
+
+def _traced_optional(trace, name: str, fn, *args, **kwargs) -> Dict[str, Any]:
+    """Call an optional tool function with trace instrumentation."""
+    if trace is None:
+        return _call_optional(fn, *args, **kwargs)
+
+    from evaluation.trace import TraceContext
+    with TraceContext(trace, name, "tool") as ctx:
+        try:
+            resp = fn(*args, **kwargs)
+            data = _safe_tool_data(resp)
+            if not data:
+                ctx.warnings.append(f"{name} returned empty data")
+            return data
+        except Exception as e:
+            ctx.success = False
+            ctx.warnings.append(str(e))
+            return {}
+
+
 def build_match_pack(
     home_team: str,
     away_team: str,
@@ -46,47 +79,51 @@ def build_match_pack(
     league_name: str = "",
     fixture_id: str = "",
     match_date: str = "",
+    trace=None,
 ) -> Dict[str, Any]:
     """
     Assemble a complete match pack from existing tools.
 
     Calls 6 mandatory tools + 2 optional tools. No LLM.
     Returns a dict ready to be saved as match_pack.json.
+    Optionally accepts a PipelineTrace for observability.
     """
     # --- MANDATORY TOOLS ---
 
     # 1. Team states (8-layer KG snapshot)
-    home_state = _safe_tool_data(get_team_state(home_team, round_number))
-    away_state = _safe_tool_data(get_team_state(away_team, round_number))
+    home_state = _traced_tool_call(trace, f"get_team_state:{home_team}", get_team_state, home_team, round_number, league_id)
+    away_state = _traced_tool_call(trace, f"get_team_state:{away_team}", get_team_state, away_team, round_number, league_id)
 
     # 2. Team form (recent trajectory with xG context)
-    home_form = _safe_tool_data(get_team_form(home_team, round_number=round_number))
-    away_form = _safe_tool_data(get_team_form(away_team, round_number=round_number))
+    home_form = _traced_tool_call(trace, f"get_team_form:{home_team}", get_team_form, home_team, round_number=round_number, league_id=league_id)
+    away_form = _traced_tool_call(trace, f"get_team_form:{away_team}", get_team_form, away_team, round_number=round_number, league_id=league_id)
 
     # 3. Team profiles (style classification)
-    home_profile = _safe_tool_data(get_team_profile(home_team, round_number))
-    away_profile = _safe_tool_data(get_team_profile(away_team, round_number))
+    home_profile = _traced_tool_call(trace, f"get_team_profile:{home_team}", get_team_profile, home_team, round_number, league_id)
+    away_profile = _traced_tool_call(trace, f"get_team_profile:{away_team}", get_team_profile, away_team, round_number, league_id)
 
     # 4. Matchup analysis (style clash)
-    matchup = _safe_tool_data(
-        get_matchup_analysis(home_team, away_team, "home", round_number)
+    matchup = _traced_tool_call(
+        trace, f"get_matchup_analysis:{home_team}_vs_{away_team}",
+        get_matchup_analysis, home_team, away_team, "home", round_number, league_id,
     )
 
     # 5. Key players
-    home_players = _safe_tool_data(get_key_players(home_team, round_number))
-    away_players = _safe_tool_data(get_key_players(away_team, round_number))
+    home_players = _traced_tool_call(trace, f"get_key_players:{home_team}", get_key_players, home_team, round_number)
+    away_players = _traced_tool_call(trace, f"get_key_players:{away_team}", get_key_players, away_team, round_number)
 
     # 6. Game state tree (scenarios)
-    game_tree = _safe_tool_data(
-        build_game_state_tree(home_team, away_team, "home", round_number)
+    game_tree = _traced_tool_call(
+        trace, f"build_game_state_tree:{home_team}_vs_{away_team}",
+        build_game_state_tree, home_team, away_team, "home", round_number, league_id,
     )
 
     # --- OPTIONAL TOOLS (fail gracefully) ---
 
-    home_injuries = _call_optional(get_injuries_impact, home_team, round_number)
-    away_injuries = _call_optional(get_injuries_impact, away_team, round_number)
-    home_psychology = _call_optional(get_psychological_state, home_team, round_number)
-    away_psychology = _call_optional(get_psychological_state, away_team, round_number)
+    home_injuries = _traced_optional(trace, f"get_injuries_impact:{home_team}", get_injuries_impact, home_team, round_number)
+    away_injuries = _traced_optional(trace, f"get_injuries_impact:{away_team}", get_injuries_impact, away_team, round_number)
+    home_psychology = _traced_optional(trace, f"get_psychological_state:{home_team}", get_psychological_state, home_team, round_number, league_id)
+    away_psychology = _traced_optional(trace, f"get_psychological_state:{away_team}", get_psychological_state, away_team, round_number, league_id)
 
     # --- ASSEMBLE ---
 
@@ -127,6 +164,7 @@ def build_match_pack(
         },
         "league_context": league_context,
         "game_state_tree": game_tree,
+        "tactical_rubric": None,  # filled by build_tactical_rubric() after pack is built
         "odds": {"available": False, "snapshot": None},
         "built_at": datetime.utcnow().isoformat() + "Z",
     }
@@ -203,7 +241,6 @@ def build_ml_anchor(report: Dict) -> Dict[str, Any]:
     """
     probs = report.get("probabilities", {})
     pred = report.get("prediction", {})
-    signals = report.get("signals", {})
     drivers = report.get("drivers", [])
 
     return {
@@ -217,9 +254,9 @@ def build_ml_anchor(report: Dict) -> Dict[str, Any]:
         "predicted_result": pred.get("predicted_result", ""),
         "confidence": pred.get("confidence_label", "medium"),
         "signals": {
-            "p_max": signals.get("p_max", 0.33),
-            "margin_top2": signals.get("margin_top2", 0.0),
-            "entropy_norm": signals.get("entropy_norm", 1.0),
+            "p_max": pred.get("p_max", 0.33),
+            "margin_top2": pred.get("margin_top2", 0.0),
+            "entropy_norm": pred.get("entropy_norm", 1.0),
         },
         "drivers": drivers,
         "risk_flags": report.get("risk_flags", []),

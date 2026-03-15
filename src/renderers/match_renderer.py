@@ -122,41 +122,44 @@ def validate_rendered_text(text: str) -> None:
 # Editorial policy
 # ---------------------------------------------------------------------------
 
-def classify_editorial(report: Dict) -> str:
+def classify_editorial(report: Dict, decision: Optional[Dict] = None) -> str:
     """
     Classify a report for editorial decision.
+
+    If a Decision dict is provided (from decision_engine), maps it to editorial labels.
+    Otherwise falls back to report-based classification.
 
     Returns:
         "publish"   — strong enough signal to post as a pick
         "watchlist" — interesting game but weak signal, post as 'game to watch'
         "skip"      — too uncertain or data-incomplete, don't publish externally
     """
+    # v1.7: Use decision engine output if available
+    if decision is not None:
+        action = decision.get("action", "NO_BET")
+        if action in ("PICK", "LEAN"):
+            return "publish"
+        if action == "WATCHLIST":
+            return "watchlist"
+        return "skip"
+
+    # Fallback: legacy report-based classification
     flags = report["risk_flags"]
     pred = report["prediction"]
     confidence = pred["confidence"]
 
-    # Hard skip: missing data
     if "elo_missing" in flags:
         return "skip"
-
-    # Near-uniform: model has no opinion
     if "near_uniform" in flags:
         return "skip"
-
-    # High confidence: always publish
     if confidence == "high":
         return "publish"
-
-    # Medium confidence: publish unless tight margin
     if confidence == "medium":
         if "tight_margin" in flags:
             return "watchlist"
         return "publish"
-
-    # Low confidence: watchlist if margin > 0.05, skip otherwise
     if pred["margin_top2"] > 0.05:
         return "watchlist"
-
     return "skip"
 
 

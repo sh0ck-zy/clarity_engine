@@ -95,31 +95,7 @@ def compute_match_signals(
         f"margin_top2={margin_top2:.2f} < 0.15 AND home_clean_sheets_last5={home_cs_last5} <= 1"
     )
 
-    # 5. Form momentum
-    home_trend = _get_nested(home_state, "trajectory", "form_trend", default="stable")
-    away_trend = _get_nested(away_state, "trajectory", "form_trend", default="stable")
-    signals["form_momentum_home"] = home_trend or "stable"
-    signals["form_momentum_away"] = away_trend or "stable"
-    derivations["form_momentum"] = (
-        f"home={home_trend}, away={away_trend} (from team_state.trajectory)"
-    )
-
-    # 6. Key absence impact
-    home_injuries = match_pack.get("home", {}).get("injuries", [])
-    away_injuries = match_pack.get("away", {}).get("injuries", [])
-    high_impact_home = sum(1 for i in home_injuries if i.get("impact") == "High")
-    high_impact_away = sum(1 for i in away_injuries if i.get("impact") == "High")
-    total_high_impact = high_impact_home + high_impact_away
-    signals["key_absence_impact"] = (
-        "high" if total_high_impact >= 2
-        else "medium" if total_high_impact == 1
-        else "low"
-    )
-    derivations["key_absence_impact"] = (
-        f"high_impact_missing: home={high_impact_home}, away={high_impact_away}"
-    )
-
-    # 7. Venue advantage
+    # 5. Venue advantage (form_momentum and key_absence_impact removed — already in rubric)
     home_venue_pts = _get_nested(home_state, "home_away", "home_points", default=0) or 0
     home_played = _get_nested(home_state, "position", "played", default=1) or 1
     home_ppg = home_venue_pts / max(home_played / 2, 1)  # approximate home games
@@ -130,22 +106,7 @@ def compute_match_signals(
         f"home_venue_points={home_venue_pts}, approx_ppg={home_ppg:.2f}"
     )
 
-    # 8. Style clash type
-    poss_diff = abs(home_possession - away_possession)
-    if poss_diff > 8:
-        clash = "Possession vs Transition"
-    elif home_possession > 52 and away_possession > 52:
-        clash = "Open"
-    elif home_possession < 48 and away_possession < 48:
-        clash = "Direct"
-    else:
-        clash = "Balanced"
-    signals["style_clash_type"] = clash
-    derivations["style_clash_type"] = (
-        f"home_poss={home_possession:.1f}%, away_poss={away_possession:.1f}%, diff={poss_diff:.1f}"
-    )
-
-    # 9. Upset potential
+    # 6. Upset potential (style_clash_type removed — already in rubric)
     is_home_fav = predicted == "H"
     away_form_strong = away_form_pts >= 10
     home_defense_weak = home_cs_last5 <= 1
@@ -157,13 +118,13 @@ def compute_match_signals(
         f"AND home_cs_last5={home_cs_last5} <= 1"
     )
 
-    # 10. Confidence calibration
+    # 7. Confidence calibration
     signals["ml_confidence_justified"] = _assess_ml_confidence(
         margin_top2, entropy_norm, home_form_pts, away_form_pts
     )
 
     return {
-        "schema_version": "1.5",
+        "schema_version": "1.7",
         "match_id": match_id,
         "signals": signals,
         "derived_from": derivations,
@@ -196,3 +157,77 @@ def _assess_ml_confidence(
         return "somewhat_supported"
     # Low margin = hard to be confident
     return "weakly_supported"
+
+
+def compute_ml_divergence_context(
+    match_pack: Dict[str, Any],
+    ml_anchor: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Compute structured reasons why the MI lean might diverge from ML prediction.
+
+    Returns a dict with potential divergence factors:
+    - key_injuries: high-impact absences not captured by the model
+    - form_shift: recent trajectory changes
+    - tactical_mismatch: style clash factors
+    """
+    reasons = []
+
+    # 1. Key injuries not in model features
+    home_injuries = match_pack.get("home", {}).get("injuries", [])
+    away_injuries = match_pack.get("away", {}).get("injuries", [])
+    high_impact = []
+    for side, injuries in [("home", home_injuries), ("away", away_injuries)]:
+        for inj in injuries:
+            if inj.get("impact") == "High":
+                high_impact.append(f"{side}: {inj.get('name', '?')} ({inj.get('position', '?')})")
+    if high_impact:
+        reasons.append({
+            "factor": "key_injuries",
+            "description": f"High-impact absences: {', '.join(high_impact)}",
+            "strength": "strong" if len(high_impact) >= 2 else "moderate",
+        })
+
+    # 2. Form shift (trajectory changing direction)
+    home_trend = _get_nested(match_pack, "home", "state", "trajectory", "form_trend", default="stable")
+    away_trend = _get_nested(match_pack, "away", "state", "trajectory", "form_trend", default="stable")
+    predicted = ml_anchor.get("predicted_result", "")
+
+    if predicted == "H" and home_trend == "declining":
+        reasons.append({
+            "factor": "form_shift",
+            "description": "Home team predicted to win but form is declining",
+            "strength": "moderate",
+        })
+    if predicted == "A" and away_trend == "declining":
+        reasons.append({
+            "factor": "form_shift",
+            "description": "Away team predicted to win but form is declining",
+            "strength": "moderate",
+        })
+    if predicted == "H" and away_trend == "improving":
+        reasons.append({
+            "factor": "form_shift",
+            "description": "Away team improving — ML may underweight recent momentum",
+            "strength": "weak",
+        })
+
+    # 3. Tactical mismatch
+    home_poss = _get_nested(match_pack, "home", "state", "style", "avg_possession", default=50.0) or 50.0
+    away_poss = _get_nested(match_pack, "away", "state", "style", "avg_possession", default=50.0) or 50.0
+    poss_diff = abs(home_poss - away_poss)
+
+    if poss_diff > 10:
+        reasons.append({
+            "factor": "tactical_mismatch",
+            "description": (
+                f"Large possession gap ({home_poss:.0f}% vs {away_poss:.0f}%) — "
+                f"style clash may create unpredictable dynamics"
+            ),
+            "strength": "weak",
+        })
+
+    return {
+        "divergence_reasons": reasons,
+        "has_strong_divergence": any(r["strength"] == "strong" for r in reasons),
+    }

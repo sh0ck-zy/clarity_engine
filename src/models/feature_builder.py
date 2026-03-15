@@ -214,75 +214,11 @@ def _merge_elo(df: pd.DataFrame, countries: Optional[List[str]] = None) -> pd.Da
     return df
 
 
-# Football-data.co.uk -> FotMob team name mapping
-_CSV_TO_FOTMOB = {
-    "Arsenal": "Arsenal",
-    "Aston Villa": "Aston Villa",
-    "Bournemouth": "AFC Bournemouth",
-    "Brentford": "Brentford",
-    "Brighton": "Brighton & Hove Albion",
-    "Burnley": "Burnley",
-    "Chelsea": "Chelsea",
-    "Crystal Palace": "Crystal Palace",
-    "Everton": "Everton",
-    "Fulham": "Fulham",
-    "Leeds": "Leeds United",
-    "Leicester": "Leicester City",
-    "Liverpool": "Liverpool",
-    "Man City": "Manchester City",
-    "Man United": "Manchester United",
-    "Newcastle": "Newcastle United",
-    "Nott'm Forest": "Nottingham Forest",
-    "Southampton": "Southampton",
-    "Sunderland": "Sunderland",
-    "Spurs": "Tottenham Hotspur",
-    "Tottenham": "Tottenham Hotspur",
-    "West Ham": "West Ham United",
-    "Wolves": "Wolverhampton Wanderers",
-    "Ipswich": "Ipswich Town",
-    "Luton": "Luton Town",
-    # Portuguese teams (football-data.co.uk name -> FotMob name)
-    # These will be populated once we see the actual FotMob names after backfill
-    "Sp Lisbon": "Sporting CP",
-    "Sporting": "Sporting CP",
-    "Benfica": "SL Benfica",
-    "Porto": "FC Porto",
-    "Braga": "SC Braga",
-    "Guimaraes": "Vitória SC",
-    "Famalicao": "FC Famalicão",
-    "Gil Vicente": "Gil Vicente FC",
-    "Moreirense": "Moreirense FC",
-    "Rio Ave": "Rio Ave FC",
-    "Santa Clara": "Santa Clara",
-    "Casa Pia": "Casa Pia AC",
-    "Estrela Amadora": "CF Estrela da Amadora",
-    "Estoril": "GD Estoril Praia",
-    "Arouca": "FC Arouca",
-    "Boavista": "Boavista FC",
-    "Nacional": "CD Nacional",
-    "AVS": "AVS",
-}
+# Team name mapping — delegated to odds.normalizer
+from odds.normalizer import CSV_TO_FOTMOB as _CSV_TO_FOTMOB
 
-# League ID -> odds CSV config
-_LEAGUE_ODDS_CONFIG = {
-    47: {  # Premier League
-        "csv": "E0_2526.csv",
-        "format": "standard",  # HomeTeam, AwayTeam, B365H/D/A columns
-    },
-    57: {  # Eredivisie
-        "csv": "N1_2526.csv",
-        "format": "standard",
-    },
-    61: {  # Liga Portugal
-        "csv": "P1_2526.csv",
-        "format": "standard",
-    },
-    268: {  # Brasileirão
-        "csv": "BRA_2025.csv",
-        "format": "extra",  # Home, Away, PSCH/D/A columns, multi-season file
-        "season_filter": "2025",
-    },
-}
+# League ID -> odds config — delegated to odds.importer
+from odds.importer import LEAGUE_CONFIG as _LEAGUE_ODDS_CONFIG
 
 # League ID -> ELO country codes
 _LEAGUE_COUNTRIES = {
@@ -294,76 +230,19 @@ _LEAGUE_COUNTRIES = {
 
 
 def _load_market_odds(league_id: int = 47, csv_path: Optional[Path] = None) -> Dict[tuple, tuple]:
-    """Load market odds from football-data.co.uk CSV. Returns lookup dict.
+    """Load market odds. Delegates to odds.resolver.
 
-    Handles two CSV formats:
-    - 'standard' (E0, P1): HomeTeam, AwayTeam, B365H/D/A
-    - 'extra' (BRA): Home, Away, PSCH/D/A (Pinnacle closing only)
+    Returns {(home, away): (prob_H, prob_D, prob_A, odds_H, odds_D, odds_A)}
     """
-    config = _LEAGUE_ODDS_CONFIG.get(league_id, {})
+    from odds.resolver import get_odds_lookup
 
-    if csv_path is None:
-        csv_name = config.get("csv")
-        if not csv_name:
-            return {}
-        csv_path = _PROJECT_ROOT / "data" / "football_data" / "odds" / csv_name
-
-    if not csv_path.exists():
+    config = _LEAGUE_ODDS_CONFIG.get(league_id)
+    if not config:
         return {}
 
-    odds_df = pd.read_csv(csv_path)
-    fmt = config.get("format", "standard")
-
-    if fmt == "extra":
-        # Brazilian/extra format: Country, League, Season, Date, Time, Home, Away, HG, AG, Res, PSCH, PSCD, PSCA, ...
-        season_filter = config.get("season_filter")
-        if season_filter:
-            odds_df = odds_df[odds_df["Season"].astype(str) == season_filter]
-
-        required = ["Home", "Away", "PSCH", "PSCD", "PSCA"]
-        if not all(c in odds_df.columns for c in required):
-            # Try closing B365 columns as fallback
-            required = ["Home", "Away", "B365CH", "B365CD", "B365CA"]
-            if not all(c in odds_df.columns for c in required):
-                return {}
-            h_col, d_col, a_col = "B365CH", "B365CD", "B365CA"
-        else:
-            h_col, d_col, a_col = "PSCH", "PSCD", "PSCA"
-
-        home_col, away_col = "Home", "Away"
-    else:
-        # Standard format: HomeTeam, AwayTeam, B365H, B365D, B365A
-        required = ["HomeTeam", "AwayTeam", "B365H", "B365D", "B365A"]
-        if not all(c in odds_df.columns for c in required):
-            return {}
-        h_col, d_col, a_col = "B365H", "B365D", "B365A"
-        home_col, away_col = "HomeTeam", "AwayTeam"
-
-    # Drop rows with missing odds
-    odds_df = odds_df.dropna(subset=[h_col, d_col, a_col])
-
-    # Build implied probabilities (normalized after vig removal)
-    odds_df["impl_H"] = 1.0 / odds_df[h_col].astype(float)
-    odds_df["impl_D"] = 1.0 / odds_df[d_col].astype(float)
-    odds_df["impl_A"] = 1.0 / odds_df[a_col].astype(float)
-    total_impl = odds_df["impl_H"] + odds_df["impl_D"] + odds_df["impl_A"]
-    odds_df["prob_H"] = odds_df["impl_H"] / total_impl
-    odds_df["prob_D"] = odds_df["impl_D"] / total_impl
-    odds_df["prob_A"] = odds_df["impl_A"] / total_impl
-
-    lookup: Dict[tuple, tuple] = {}
-    for _, row in odds_df.iterrows():
-        csv_home = str(row[home_col])
-        csv_away = str(row[away_col])
-        fotmob_home = _CSV_TO_FOTMOB.get(csv_home, csv_home)
-        fotmob_away = _CSV_TO_FOTMOB.get(csv_away, csv_away)
-        lookup[(fotmob_home, fotmob_away)] = (
-            float(row["prob_H"]),
-            float(row["prob_D"]),
-            float(row["prob_A"]),
-        )
-
-    return lookup
+    # Derive season from league config code (e.g. "E0" → look for current season)
+    season = "2526"  # current season default
+    return get_odds_lookup(league_id=league_id, season=season, snapshot_type="opening")
 
 
 def _merge_market_odds(df: pd.DataFrame, odds_lookup: Dict[tuple, tuple]) -> pd.DataFrame:
@@ -375,7 +254,7 @@ def _merge_market_odds(df: pd.DataFrame, odds_lookup: Dict[tuple, tuple]) -> pd.
     for _, row in df.iterrows():
         key = (row["home_team_name"], row["away_team_name"])
         if key in odds_lookup:
-            prob_h, prob_d, prob_a = odds_lookup[key]
+            prob_h, prob_d, prob_a, *_ = odds_lookup[key]
             market_h.append(prob_h)
             market_d.append(prob_d)
             market_a.append(prob_a)
@@ -459,18 +338,23 @@ def _check_postponements(df: pd.DataFrame) -> None:
         round_matches = df[df["round_number"] == round_num]
         max_date_this = round_matches["match_date"].max()
 
-        later_rounds = df[df["round_number"] > round_num]
-        if later_rounds.empty:
+        # Compare against the NEXT round's median date (not min of ALL later rounds)
+        # Using median avoids a single rescheduled early match poisoning the check
+        next_round = round_num + 1
+        next_round_matches = df[df["round_number"] == next_round]
+        if next_round_matches.empty:
             continue
-        min_date_later = later_rounds["match_date"].min()
+        sorted_dates = next_round_matches["match_date"].sort_values()
+        ref_date = sorted_dates.iloc[len(sorted_dates) // 2]
 
-        if max_date_this > min_date_later:
-            offending = round_matches[round_matches["match_date"] > min_date_later]
+        grace = pd.Timedelta(hours=48)
+        if max_date_this > ref_date + grace:
+            offending = round_matches[round_matches["match_date"] > ref_date + grace]
             for _, row in offending.iterrows():
                 issues.append(
                     f"  R{row['round_number']} {row['home_team_name']} vs "
                     f"{row['away_team_name']} ({row['match_date']}) played after "
-                    f"R{round_num + 1}+ started ({min_date_later})"
+                    f"R{next_round} median ({ref_date})"
                 )
 
     if issues:
@@ -480,6 +364,37 @@ def _check_postponements(df: pd.DataFrame) -> None:
         print(
             "Round-based walk-forward may have minor temporal leakage for these.\n"
         )
+
+
+def _validate_temporal_ordering(df: pd.DataFrame) -> int:
+    """Validate that team_states were computed before match kickoff.
+
+    Logs a warning count but does not block. Returns violation count.
+    """
+    # We can check if match_date (used as as_of_date proxy) has ordering issues
+    # by verifying round N-1 state dates are before round N match dates
+    violations = 0
+    for round_num in df["round_number"].unique():
+        round_matches = df[df["round_number"] == round_num]
+        if round_num <= 2:
+            continue
+        # Previous round's latest match date should be before this round's earliest
+        prev_round = df[df["round_number"] == round_num - 1]
+        if prev_round.empty:
+            continue
+        prev_max = prev_round["match_date"].max()
+        curr_min = round_matches["match_date"].min()
+        if prev_max > curr_min:
+            violations += 1
+
+    if violations:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            f"Temporal leakage: {violations} round(s) where previous round's latest "
+            f"match was played after current round started"
+        )
+    return violations
 
 
 def build_feature_dataset(
@@ -592,6 +507,9 @@ def build_feature_dataset(
 
     # Check postponements
     _check_postponements(df)
+
+    # Temporal validation
+    _validate_temporal_ordering(df)
 
     # Select output columns
     id_cols = [
