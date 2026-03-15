@@ -48,3 +48,5 @@ src/data/player_impact.py
 data/
 !src/data/
 !src/data/**
+clarity_football.db
+v14_vs_v15_comparison.md
