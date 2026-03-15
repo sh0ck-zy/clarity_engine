@@ -24,6 +24,7 @@ output/
 
 # Agent workspace & config (local only)
 agent_workspace/
+.claude/worktrees/
 .openclaw/
 AGENTS.md
 BOOTSTRAP.md
