@@ -73,6 +73,7 @@ def calculate_value(our_prob: float, odds: float) -> float:
 def get_psychological_state(
     team: str | int,
     round_number: Optional[int] = None,
+    league_id: Optional[int] = None,
 ) -> ToolResponse:
     """
     Analyze the psychological/mental state of a team.
@@ -100,15 +101,25 @@ def get_psychological_state(
         
         with db_cursor() as cur:
             # Get team state
-            cur.execute(
-                """
-                SELECT * FROM team_states 
-                WHERE team_id = %s AND round_number = %s
-                """,
-                (team_id, round_number)
-            )
+            if league_id:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id = %s AND round_number = %s AND league_id = %s
+                    """,
+                    (team_id, round_number, league_id)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id = %s AND round_number = %s
+                    ORDER BY league_id
+                    """,
+                    (team_id, round_number)
+                )
             state = cur.fetchone()
-            
+
             if not state:
                 return ToolResponse(
                     success=False,
@@ -478,6 +489,7 @@ def build_game_state_tree(
     team2: str | int,
     venue_for_team1: str = "home",
     round_number: Optional[int] = None,
+    league_id: Optional[int] = None,
 ) -> ToolResponse:
     """
     Build a game state tree showing how the match might evolve.
@@ -511,13 +523,22 @@ def build_game_state_tree(
         
         with db_cursor() as cur:
             # Get both teams' states
-            cur.execute(
-                """
-                SELECT * FROM team_states 
-                WHERE team_id IN (%s, %s) AND round_number = %s
-                """,
-                (team1_id, team2_id, round_number)
-            )
+            if league_id:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id IN (%s, %s) AND round_number = %s AND league_id = %s
+                    """,
+                    (team1_id, team2_id, round_number, league_id)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id IN (%s, %s) AND round_number = %s
+                    """,
+                    (team1_id, team2_id, round_number)
+                )
             states = {r["team_id"]: row_to_dict(r) for r in cur.fetchall()}
         
         if team1_id not in states or team2_id not in states:

@@ -34,18 +34,19 @@ class MatchResult:
     """A single match result for a team."""
     round_number: int
     match_date: str
-    opponent_id: int
-    is_home: bool
-    goals_for: int
-    goals_against: int
-    xg_for: float
-    xg_against: float
-    possession: float
-    formation: str
-    shots: int
-    shots_on_target: int
-    big_chances: int
-    shots_against: int
+    kickoff_time: Optional[datetime] = None
+    opponent_id: int = 0
+    is_home: bool = True
+    goals_for: int = 0
+    goals_against: int = 0
+    xg_for: float = 0.0
+    xg_against: float = 0.0
+    possession: float = 50.0
+    formation: str = ""
+    shots: int = 0
+    shots_on_target: int = 0
+    big_chances: int = 0
+    shots_against: int = 0
 
 
 def _parse_stats_new_format(stats_json: dict) -> dict:
@@ -171,12 +172,20 @@ def parse_stats_json(stats_json: dict) -> dict:
         "big_chances_home": None, "big_chances_away": None,
     }
 
-    if not stats_json or not isinstance(stats_json, dict):
+    if not stats_json:
         return result
 
-    # Detect format and dispatch
+    # Format 3: Playwright — list of categories directly (no Periods wrapper)
+    if isinstance(stats_json, list):
+        return _parse_stats_new_format({"Periods": {"All": {"stats": stats_json}}})
+
+    if not isinstance(stats_json, dict):
+        return result
+
+    # Format 1: Scrapling — dict with "Periods" key
     if "Periods" in stats_json:
         return _parse_stats_new_format(stats_json)
+    # Format 2: Legacy — dict with "All" key (stringified dataclasses)
     elif "All" in stats_json:
         return _parse_stats_legacy_format(stats_json)
 
@@ -193,7 +202,8 @@ def get_team_matches(conn, league_id: int = 47) -> Dict[int, List[MatchResult]]:
             home_team_id, home_team_name, away_team_id, away_team_name,
             home_score, away_score,
             formation_home, formation_away,
-            stats
+            stats,
+            kickoff_time
         FROM fotmob_matches
         WHERE status = 'finished' AND round_number IS NOT NULL
             AND league_id = %s
@@ -211,46 +221,48 @@ def get_team_matches(conn, league_id: int = 47) -> Dict[int, List[MatchResult]]:
          home_id, home_name, away_id, away_name,
          home_score, away_score,
          formation_home, formation_away,
-         stats_json) = row
-        
+         stats_json, kickoff_time) = row
+
         # Parse stats
         stats = parse_stats_json(stats_json) if stats_json else {}
-        
+
         # Home team result
         if home_id not in team_matches:
             team_matches[home_id] = []
-        
+
         team_matches[home_id].append(MatchResult(
             round_number=round_num,
             match_date=str(match_date),
+            kickoff_time=kickoff_time,
             opponent_id=away_id,
             is_home=True,
             goals_for=home_score or 0,
             goals_against=away_score or 0,
             xg_for=stats.get("xg_home") or 0,
             xg_against=stats.get("xg_away") or 0,
-            possession=stats.get("possession_home") or 50,
+            possession=stats.get("possession_home") if stats.get("possession_home") is not None else 50,
             formation=formation_home or "",
             shots=stats.get("shots_home") or 0,
             shots_on_target=stats.get("shots_on_target_home") or 0,
             big_chances=stats.get("big_chances_home") or 0,
             shots_against=stats.get("shots_away") or 0,
         ))
-        
+
         # Away team result
         if away_id not in team_matches:
             team_matches[away_id] = []
-        
+
         team_matches[away_id].append(MatchResult(
             round_number=round_num,
             match_date=str(match_date),
+            kickoff_time=kickoff_time,
             opponent_id=home_id,
             is_home=False,
             goals_for=away_score or 0,
             goals_against=home_score or 0,
             xg_for=stats.get("xg_away") or 0,
             xg_against=stats.get("xg_home") or 0,
-            possession=stats.get("possession_away") or 50,
+            possession=stats.get("possession_away") if stats.get("possession_away") is not None else 50,
             formation=formation_away or "",
             shots=stats.get("shots_away") or 0,
             shots_on_target=stats.get("shots_on_target_away") or 0,
@@ -276,13 +288,26 @@ def calculate_form_trend(form_points_current: int, form_points_previous: int) ->
     return "stable"
 
 
-def compute_team_state(team_id: int, round_number: int, 
-                       matches: List[MatchResult]) -> dict:
-    """Compute team state for a specific round."""
-    
-    # Filter matches up to this round
-    matches_so_far = [m for m in matches if m.round_number <= round_number]
-    matches_so_far.sort(key=lambda x: x.round_number)
+def compute_team_state(team_id: int, round_number: int,
+                       matches: List[MatchResult],
+                       kickoff_time: Optional[datetime] = None) -> dict:
+    """Compute team state for a specific round.
+
+    If kickoff_time is provided, uses it as the temporal cutoff (only include
+    matches that kicked off BEFORE this time). Falls back to round_number
+    filtering when kickoff_time is not available.
+    """
+
+    if kickoff_time is not None:
+        # Temporal walk-forward: only include matches kicked off before this match
+        matches_so_far = [m for m in matches
+                          if m.kickoff_time is not None and m.kickoff_time < kickoff_time]
+        if not matches_so_far:
+            # Fallback to round-based if no kickoff_time matches
+            matches_so_far = [m for m in matches if m.round_number <= round_number]
+    else:
+        matches_so_far = [m for m in matches if m.round_number <= round_number]
+    matches_so_far.sort(key=lambda x: (x.kickoff_time or datetime.min, x.round_number))
     
     if not matches_so_far:
         return None
@@ -427,6 +452,216 @@ def calculate_positions(team_states: List[dict], round_number: int) -> None:
         state["position"] = i
 
 
+def populate_players(conn, league_id: int) -> int:
+    """Populate players table from fotmob_player_performances."""
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO players (player_id, player_name, current_team_id)
+        SELECT DISTINCT ON (fpp.player_id)
+            fpp.player_id, fpp.player_name, fpp.team_id
+        FROM fotmob_player_performances fpp
+        JOIN fotmob_matches fm ON fm.fotmob_match_id = fpp.fotmob_match_id
+        WHERE fm.league_id = %s
+          AND fpp.player_id IS NOT NULL
+        ORDER BY fpp.player_id, fm.match_date DESC
+        ON CONFLICT (player_id) DO UPDATE SET
+            player_name = EXCLUDED.player_name,
+            current_team_id = EXCLUDED.current_team_id
+    """, (league_id,))
+    conn.commit()
+    count = cur.rowcount
+    cur.close()
+    return count
+
+
+def get_player_match_data(conn, league_id: int) -> Dict[int, List[dict]]:
+    """Get per-match player data for computing states."""
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            fpp.player_id, fpp.team_id, fm.round_number, fm.match_date,
+            fpp.is_starter, fpp.minutes_played,
+            fpp.goals, fpp.assists, fpp.xg, fpp.xa, fpp.rating
+        FROM fotmob_player_performances fpp
+        JOIN fotmob_matches fm ON fm.fotmob_match_id = fpp.fotmob_match_id
+        WHERE fm.league_id = %s
+          AND fm.status = 'finished'
+          AND fm.round_number IS NOT NULL
+          AND fpp.player_id IS NOT NULL
+        ORDER BY fpp.player_id, fm.round_number, fm.match_date
+    """, (league_id,))
+
+    rows = cur.fetchall()
+    cur.close()
+
+    player_matches: Dict[int, List[dict]] = {}
+    for row in rows:
+        pid = row[0]
+        entry = {
+            "player_id": row[0],
+            "team_id": row[1],
+            "round_number": row[2],
+            "match_date": str(row[3]),
+            "is_starter": row[4],
+            "minutes_played": row[5] or 0,
+            "goals": row[6] or 0,
+            "assists": row[7] or 0,
+            "xg": float(row[8]) if row[8] is not None else 0.0,
+            "xa": float(row[9]) if row[9] is not None else 0.0,
+            "rating": float(row[10]) if row[10] is not None else None,
+        }
+        player_matches.setdefault(pid, []).append(entry)
+
+    return player_matches
+
+
+def compute_player_state(player_id: int, round_number: int,
+                         matches: List[dict]) -> Optional[dict]:
+    """Compute player state for a specific round (walk-forward)."""
+    so_far = [m for m in matches if m["round_number"] <= round_number]
+    if not so_far:
+        return None
+
+    last_5 = so_far[-5:]
+
+    # Season totals
+    appearances = len(so_far)
+    starts = sum(1 for m in so_far if m["is_starter"])
+    total_minutes = sum(m["minutes_played"] for m in so_far)
+    goals = sum(m["goals"] for m in so_far)
+    assists = sum(m["assists"] for m in so_far)
+    xg_total = sum(m["xg"] for m in so_far)
+    xa_total = sum(m["xa"] for m in so_far)
+
+    # Last-5 form
+    goals_last5 = sum(m["goals"] for m in last_5)
+    assists_last5 = sum(m["assists"] for m in last_5)
+    xg_last5 = sum(m["xg"] for m in last_5)
+    xa_last5 = sum(m["xa"] for m in last_5)
+    minutes_last5 = sum(m["minutes_played"] for m in last_5)
+    ratings_last5 = [m["rating"] for m in last_5 if m["rating"] is not None]
+    avg_rating_last5 = round(sum(ratings_last5) / len(ratings_last5), 1) if ratings_last5 else None
+
+    # Season average rating
+    all_ratings = [m["rating"] for m in so_far if m["rating"] is not None]
+    avg_rating_season = round(sum(all_ratings) / len(all_ratings), 1) if all_ratings else None
+
+    # Per-90 averages (guard: need at least 90 total minutes)
+    if total_minutes >= 90:
+        goals_per_90 = round(goals / (total_minutes / 90), 2)
+        assists_per_90 = round(assists / (total_minutes / 90), 2)
+        xg_per_90 = round(xg_total / (total_minutes / 90), 2)
+    else:
+        goals_per_90 = None
+        assists_per_90 = None
+        xg_per_90 = None
+
+    # Use most recent match for team_id and as_of_date
+    latest = so_far[-1]
+
+    return {
+        "player_id": player_id,
+        "team_id": latest["team_id"],
+        "round_number": round_number,
+        "as_of_date": latest["match_date"],
+        "appearances": appearances,
+        "starts": starts,
+        "minutes": total_minutes,
+        "goals": goals,
+        "assists": assists,
+        "xg_total": round(xg_total, 2),
+        "xa_total": round(xa_total, 2),
+        "goals_last5": goals_last5,
+        "assists_last5": assists_last5,
+        "xg_last5": round(xg_last5, 2),
+        "xa_last5": round(xa_last5, 2),
+        "minutes_last5": minutes_last5,
+        "avg_rating_last5": avg_rating_last5,
+        "avg_rating_season": avg_rating_season,
+        "goals_per_90": goals_per_90,
+        "assists_per_90": assists_per_90,
+        "xg_per_90": xg_per_90,
+    }
+
+
+def populate_player_states(conn, league_id: int) -> int:
+    """Compute and insert player states for all players × rounds."""
+    player_matches = get_player_match_data(conn, league_id)
+    if not player_matches:
+        return 0
+
+    # Detect max round
+    max_round = 0
+    for matches in player_matches.values():
+        for m in matches:
+            if m["round_number"] > max_round:
+                max_round = m["round_number"]
+
+    all_states = []
+    for player_id, matches in player_matches.items():
+        for round_num in range(1, max_round + 1):
+            state = compute_player_state(player_id, round_num, matches)
+            if state:
+                state["league_id"] = league_id
+                all_states.append(state)
+
+    if not all_states:
+        return 0
+
+    cur = conn.cursor()
+    insert_sql = """
+        INSERT INTO player_states (
+            player_id, team_id, round_number, as_of_date,
+            appearances, starts, minutes, goals, assists,
+            xg_total, xa_total,
+            goals_last5, assists_last5, xg_last5, xa_last5,
+            minutes_last5, avg_rating_last5,
+            avg_rating_season, goals_per_90, assists_per_90, xg_per_90,
+            league_id
+        ) VALUES %s
+        ON CONFLICT (player_id, round_number, league_id) DO UPDATE SET
+            team_id = EXCLUDED.team_id,
+            as_of_date = EXCLUDED.as_of_date,
+            appearances = EXCLUDED.appearances,
+            starts = EXCLUDED.starts,
+            minutes = EXCLUDED.minutes,
+            goals = EXCLUDED.goals,
+            assists = EXCLUDED.assists,
+            xg_total = EXCLUDED.xg_total,
+            xa_total = EXCLUDED.xa_total,
+            goals_last5 = EXCLUDED.goals_last5,
+            assists_last5 = EXCLUDED.assists_last5,
+            xg_last5 = EXCLUDED.xg_last5,
+            xa_last5 = EXCLUDED.xa_last5,
+            minutes_last5 = EXCLUDED.minutes_last5,
+            avg_rating_last5 = EXCLUDED.avg_rating_last5,
+            avg_rating_season = EXCLUDED.avg_rating_season,
+            goals_per_90 = EXCLUDED.goals_per_90,
+            assists_per_90 = EXCLUDED.assists_per_90,
+            xg_per_90 = EXCLUDED.xg_per_90,
+            computed_at = now()
+    """
+
+    values = [
+        (
+            s["player_id"], s["team_id"], s["round_number"], s["as_of_date"],
+            s["appearances"], s["starts"], s["minutes"], s["goals"], s["assists"],
+            s["xg_total"], s["xa_total"],
+            s["goals_last5"], s["assists_last5"], s["xg_last5"], s["xa_last5"],
+            s["minutes_last5"], s["avg_rating_last5"],
+            s["avg_rating_season"], s["goals_per_90"], s["assists_per_90"], s["xg_per_90"],
+            s["league_id"],
+        )
+        for s in all_states
+    ]
+
+    execute_values(cur, insert_sql, values)
+    conn.commit()
+    count = len(values)
+    cur.close()
+    return count
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Populate team states from FotMob matches")
@@ -442,7 +677,7 @@ def main():
 
     try:
         # 1. Ensure tables exist (without dropping existing data)
-        print("\n[1/5] Ensuring KG tables exist...")
+        print("\n[1/7] Ensuring KG tables exist...")
         cur = conn.cursor()
         # Create tables only if they don't exist yet
         cur.execute("""
@@ -463,7 +698,7 @@ def main():
             conn.commit()
 
         # 2. Populate teams table
-        print("\n[2/5] Populating teams table...")
+        print("\n[2/7] Populating teams table...")
         cur.execute("""
             INSERT INTO teams (team_id, team_name, league_id)
             SELECT DISTINCT home_team_id, home_team_name, league_id
@@ -478,8 +713,15 @@ def main():
         team_count = cur.fetchone()[0]
         print(f"      ✓ {team_count} teams inserted for league {league_id}")
 
+        # 2b. Populate players table
+        print("\n[2b/7] Populating players table...")
+        player_count = populate_players(conn, league_id)
+        cur.execute("SELECT COUNT(*) FROM players WHERE current_team_id IN (SELECT team_id FROM teams WHERE league_id = %s)", (league_id,))
+        total_players = cur.fetchone()[0]
+        print(f"      ✓ {total_players} players inserted for league {league_id}")
+
         # 3. Get all match data
-        print("\n[3/5] Loading match data...")
+        print("\n[3/7] Loading match data...")
         team_matches = get_team_matches(conn, league_id=league_id)
         print(f"      ✓ Loaded matches for {len(team_matches)} teams")
 
@@ -492,12 +734,24 @@ def main():
         print(f"      ✓ Rounds 1-{max_round} detected")
 
         # 4. Compute team states for each round
-        print("\n[4/5] Computing team states...")
+        print("\n[4/7] Computing team states...")
         all_states = []
+
+        # Build a lookup: (team_id, round_number) -> kickoff_time
+        # so we can use temporal walk-forward
+        team_round_kickoff = {}
+        for team_id, matches in team_matches.items():
+            for m in matches:
+                if m.kickoff_time is not None:
+                    team_round_kickoff[(team_id, m.round_number)] = m.kickoff_time
 
         for round_num in range(1, max_round + 1):
             for team_id, matches in team_matches.items():
-                state = compute_team_state(team_id, round_num, matches)
+                # Use the kickoff_time of the match this team plays in the NEXT round
+                # (team_state at round N is used for predicting round N+1)
+                # But for computing state AS OF round N, we use this round's kickoff
+                kickoff = team_round_kickoff.get((team_id, round_num))
+                state = compute_team_state(team_id, round_num, matches, kickoff_time=kickoff)
                 if state:
                     state["league_id"] = league_id
                     all_states.append(state)
@@ -511,7 +765,7 @@ def main():
         print(f"      ✓ {len(all_states)} team states computed")
         
         # 5. Insert team states
-        print("\n[5/5] Inserting team states...")
+        print("\n[5/7] Inserting team states...")
         
         insert_sql = """
             INSERT INTO team_states (
@@ -594,9 +848,14 @@ def main():
         conn.commit()
         
         # Verification
-        cur.execute("SELECT COUNT(*) FROM team_states")
+        cur.execute("SELECT COUNT(*) FROM team_states WHERE league_id = %s", (league_id,))
         state_count = cur.fetchone()[0]
         print(f"      ✓ {state_count} team states inserted")
+
+        # 6. Compute player states
+        print("\n[6/7] Computing player states...")
+        ps_count = populate_player_states(conn, league_id)
+        print(f"      ✓ {ps_count} player states inserted")
         
         # Show sample (first team found)
         cur.execute("""
@@ -626,7 +885,7 @@ def main():
         cur.close()
         
         print("\n" + "=" * 60)
-        print("✅ DONE! Team states populated.")
+        print("✅ DONE! Team states + player states populated.")
         print("=" * 60)
         
     finally:

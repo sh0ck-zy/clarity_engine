@@ -134,12 +134,16 @@ def _extract_facts(
     mkt = {}
     key = (home, away)
     if key in market_odds:
-        mkt_h, mkt_d, mkt_a = market_odds[key]
+        mkt_h, mkt_d, mkt_a, raw_h, raw_d, raw_a = market_odds[key]
         mkt = {
             "prob_H": round(mkt_h, 4),
             "prob_D": round(mkt_d, 4),
             "prob_A": round(mkt_a, 4),
+            "odds_H": round(raw_h, 2),
+            "odds_D": round(raw_d, 2),
+            "odds_A": round(raw_a, 2),
             "source": "Bet365",
+            "price_source": "decimal_odds",
         }
 
     return {
@@ -154,6 +158,24 @@ def _extract_facts(
         "market_odds": mkt if mkt else None,
         "elo_missing": bool(df_row.get("elo_missing_any", 0)),
     }
+
+
+def _build_board(rdir: Path) -> None:
+    """Build daily board from cached MI artifacts (no LLM calls)."""
+    from intelligence.daily_board import build_daily_board
+    from renderers.board_telegram import render_board_telegram
+
+    print("\n  Building daily board...")
+    board = build_daily_board(rdir)
+    if board.get("error"):
+        print(f"  Board: {board['error']}")
+        return
+
+    board_tg = render_board_telegram(board)
+    (rdir / "board_telegram.txt").write_text(board_tg)
+
+    actionable = board.get("actionable_angles", 0)
+    print(f"  Board: {board['matches_analyzed']} analyzed, {actionable} actionable")
 
 
 def _safe_val(v):
@@ -179,6 +201,8 @@ def generate_round(
     intelligence: bool = False,
     mi_model: str = "gpt-4o",
     regenerate: bool = False,
+    rerender: bool = False,
+    board_only: bool = False,
 ) -> Path:
     """Generate all round artifacts. Returns the round directory path."""
     print(f"Motor: {model_config.MODEL_VERSION} | C={model_config.C} | "
@@ -216,6 +240,11 @@ def generate_round(
     write_round_config(rdir, league, league_id, round_number, season,
                        model_config.MODEL_VERSION, len(reports))
     write_round_status(rdir, status="draft")
+
+    # Board-only mode: regenerate board from cached MI, no LLM calls
+    if board_only:
+        _build_board(rdir)
+        return rdir
 
     # 6. Get round rows from feature DataFrame
     round_df = df[df["round_number"] == round_number].copy()
@@ -264,14 +293,49 @@ def generate_round(
         with open(drafts_dir / "x.txt", "w") as f:
             f.write(x)
 
-    # 8. v1.5 Match Intelligence Engine (if --intelligence)
+    # 8. Rerender-only mode: re-render telegram from existing MI JSONs
+    if rerender:
+        from intelligence.match_intelligence import render_intelligence_text
+        from intelligence.telegram_renderer import render_telegram_v15
+
+        print("\n  Re-rendering telegram drafts from cached MI...")
+        for report in reports:
+            home = report["fixture"]["home_team"]
+            away = report["fixture"]["away_team"]
+            folder = match_folder_name(home, away)
+            match_dir = rdir / "matches" / folder
+            mi_path = match_dir / "match_intelligence.json"
+            if not mi_path.exists():
+                print(f"  {home} vs {away}: no MI, skipping")
+                continue
+            mi_result = json.loads(mi_path.read_text())
+
+            # Re-render plaintext
+            mi_text = render_intelligence_text(mi_result)
+            with open(match_dir / "match_intelligence.txt", "w") as f:
+                f.write(mi_text)
+
+            # Re-render telegram
+            drafts_dir = match_dir / "drafts"
+            drafts_dir.mkdir(exist_ok=True)
+            tg = render_telegram_v15(mi_result, report)
+            with open(drafts_dir / "telegram_v15.txt", "w") as f:
+                f.write(tg)
+
+            print(f"  {home} vs {away}: re-rendered")
+
+        print(f"\n  Re-rendered {len(reports)} matches")
+        return rdir
+
+    # 9. v1.6 Match Intelligence Engine (if --intelligence)
     if intelligence:
         print("\n" + "=" * 60)
-        print("  v1.5 MATCH INTELLIGENCE ENGINE")
+        print("  v1.8 MATCH INTELLIGENCE ENGINE")
         print("=" * 60)
 
         from intelligence.match_pack_builder import build_match_pack, build_ml_anchor
         from intelligence.match_signals import compute_match_signals
+        from intelligence.tactical_rubric import build_tactical_rubric
         from intelligence.match_intelligence import (
             MatchIntelligenceEngine,
             render_intelligence_text,
@@ -281,6 +345,10 @@ def generate_round(
             IntelligenceValidator,
             build_evaluation_record,
         )
+        from evaluation.data_quality import check_match_pack_quality
+        from evaluation.trace import PipelineTrace, TraceContext
+        from evaluation.rubric import score_pre_match_rubric, compute_confidence_level
+        from intelligence.decision_engine import make_decision
 
         mi_engine = MatchIntelligenceEngine(model=mi_model)
         mi_validator = IntelligenceValidator()
@@ -295,8 +363,12 @@ def generate_round(
 
             print(f"\n  {home} vs {away}")
 
+            # Initialize trace
+            trace = PipelineTrace(match_id=str(fixture_id))
+            trace.start()
+
             try:
-                # Step 1: Build match pack (no LLM)
+                # Step 1: Build match pack (no LLM, with trace)
                 print("    Building match pack...")
                 match_pack = build_match_pack(
                     home_team=home,
@@ -306,9 +378,47 @@ def generate_round(
                     league_name=league,
                     fixture_id=str(fixture_id),
                     match_date=match_date,
+                    trace=trace,
                 )
                 with open(match_dir / "match_pack.json", "w") as f:
                     json.dump(match_pack, f, indent=2, default=str, ensure_ascii=False)
+
+                # Step 1b: Data quality checks
+                with TraceContext(trace, "data_quality_check", "data_quality") as dq_ctx:
+                    dq_result = check_match_pack_quality(match_pack)
+                    dq_ctx.metadata = dq_result.to_dict()
+                    if dq_result.warnings:
+                        for w in dq_result.warnings:
+                            dq_ctx.warnings.append(w.get("issue", str(w)))
+
+                mi_status = dq_result.mi_status
+                if dq_result.warnings:
+                    print(f"    Data quality: completeness={dq_result.completeness_score:.0f} "
+                          f"integrity={dq_result.integrity_score:.0f} "
+                          f"({len(dq_result.warnings)} issues, "
+                          f"{len(dq_result.critical_flags)} critical) "
+                          f"→ MI: {mi_status.upper()}")
+                    for w in dq_result.warnings[:3]:
+                        print(f"      - {w.get('issue', w)}")
+                    if dq_result.critical_flags:
+                        print(f"    Critical flags: {', '.join(dq_result.critical_flags)}")
+
+                # Gate: skip MI if data is too broken (binary READY/SKIP)
+                if mi_status == "skip":
+                    print(f"    SKIP: data integrity too low "
+                          f"(completeness={dq_result.completeness_score:.0f}, "
+                          f"integrity={dq_result.integrity_score:.0f})")
+                    skip_record = {
+                        "schema_version": "1.7",
+                        "match_id": str(fixture_id),
+                        "mi_status": "skip",
+                        "reason": f"completeness={dq_result.completeness_score:.0f}, "
+                                  f"integrity={dq_result.integrity_score:.0f}",
+                        "data_quality": dq_result.to_dict(),
+                    }
+                    with open(match_dir / "match_intelligence.json", "w") as f:
+                        json.dump(skip_record, f, indent=2, ensure_ascii=False)
+                    continue
 
                 # Step 2: Build ML anchor (reshape report)
                 ml_anchor = build_ml_anchor(report)
@@ -317,41 +427,125 @@ def generate_round(
 
                 # Step 3: Compute match signals (no LLM)
                 print("    Computing signals...")
-                signals = compute_match_signals(match_pack, ml_anchor)
+                with TraceContext(trace, "compute_match_signals", "signal") as sig_ctx:
+                    signals = compute_match_signals(match_pack, ml_anchor)
                 with open(match_dir / "match_signals.json", "w") as f:
                     json.dump(signals, f, indent=2, default=str)
 
-                # Step 4: Generate match intelligence (LLM)
-                print("    Reading the game...")
-                mi_result = mi_engine.generate(
-                    match_pack=match_pack,
-                    ml_anchor=ml_anchor,
-                    match_signals=signals,
-                    cache_path=match_dir / "match_intelligence.json",
-                    regenerate=regenerate,
+                # Step 3b: Build tactical rubric (v1.6 — no LLM)
+                print("    Building tactical rubric...")
+                with TraceContext(trace, "build_tactical_rubric", "rubric") as rub_tac_ctx:
+                    tactical_rubric = build_tactical_rubric(match_pack, ml_anchor)
+                with open(match_dir / "tactical_rubric.json", "w") as f:
+                    json.dump(tactical_rubric, f, indent=2, default=str, ensure_ascii=False)
+
+                # Attach rubric to match_pack for reference
+                match_pack["tactical_rubric"] = tactical_rubric
+
+                # Step 3c: Compute deterministic confidence level
+                confidence_level = compute_confidence_level(
+                    ml_anchor, signals, dq_result.score
                 )
+                print(f"    Confidence: {confidence_level}")
+
+                # Step 4: Generate match intelligence (LLM with thinking)
+                print(f"    Reading the game [{mi_model}]...")
+
+                with TraceContext(trace, "llm_generate", "llm") as llm_ctx:
+                    mi_result = mi_engine.generate(
+                        match_pack=match_pack,
+                        ml_anchor=ml_anchor,
+                        match_signals=signals,
+                        tactical_rubric=tactical_rubric,
+                        cache_path=match_dir / "match_intelligence.json",
+                        regenerate=regenerate,
+                        confidence_level=confidence_level,
+                        data_warnings=dq_result.warnings if dq_result.warnings else None,
+                    )
+                    llm_trace = mi_result.get("_llm_trace", {})
+                    llm_ctx.metadata = llm_trace
+
+                # Annotate MI result with data quality status
+                mi_result["mi_status"] = mi_status
+                mi_result["completeness_score"] = round(dq_result.completeness_score, 1)
+                mi_result["integrity_score"] = round(dq_result.integrity_score, 1)
+                mi_result["critical_data_flags"] = dq_result.critical_flags
 
                 # Step 5: Validate
-                validation = mi_validator.validate(mi_result, ml_anchor)
+                with TraceContext(trace, "validate", "validator") as val_ctx:
+                    validation = mi_validator.validate(mi_result, ml_anchor)
+                    val_ctx.metadata = {"score": validation.score}
                 print(f"    Validator score: {validation.score:.1f}/100"
                       f" ({'PASS' if validation.score >= 60 else 'FAIL'})")
                 if validation.issues:
                     for issue in validation.issues[:3]:
                         print(f"      - [{issue['check']}] {issue['issue']}")
 
+                # Step 5b: Rubric scoring
+                with TraceContext(trace, "rubric_scoring", "validator") as rub_ctx:
+                    rubric_result = score_pre_match_rubric(
+                        mi_result, match_pack, ml_anchor, signals, dq_result.score
+                    )
+                    rub_ctx.metadata = {"score": rubric_result.score}
+                print(f"    Rubric score: {rubric_result.score:.1f}/100")
+
+                # Step 5c: Decision layer (post-MI, does NOT gate MI)
+                # Build market odds for this match
+                match_market = None
+                mkt_key = (home, away)
+                if mkt_key in market_odds:
+                    mkt_h, mkt_d, mkt_a, *_ = market_odds[mkt_key]
+                    match_market = {"prob_H": mkt_h, "prob_D": mkt_d, "prob_A": mkt_a}
+
+                lean_text = mi_result.get("lean", "")
+                decision = make_decision(
+                    ml_anchor, confidence_level, dq_result,
+                    signals, tactical_rubric, match_market,
+                    lean_text=lean_text,
+                    home_team=home,
+                    away_team=away,
+                )
+                mi_result["decision"] = decision.to_dict()
+                mi_result["directions"] = decision.directions
+                print(f"    Decision: {decision.action}"
+                      f" {decision.direction or ''}"
+                      f" — {decision.reasoning[0] if decision.reasoning else ''}")
+
+                # Step 5d: Write-back enriched MI (decision, directions, DQ fields)
+                save_mi = {k: v for k, v in mi_result.items() if not k.startswith("_")}
+                with open(match_dir / "match_intelligence.json", "w") as f:
+                    json.dump(save_mi, f, indent=2, default=str, ensure_ascii=False)
+
                 # Step 6: Render plaintext
                 mi_text = render_intelligence_text(mi_result)
                 with open(match_dir / "match_intelligence.txt", "w") as f:
                     f.write(mi_text)
 
-                # Step 7: Evaluation record
+                # Step 7: Evaluation record (enriched)
+                trace_data = trace.to_dict()
                 eval_record = build_evaluation_record(
-                    match_pack, ml_anchor, signals, mi_result, validation
+                    match_pack, ml_anchor, signals, mi_result, validation,
+                    rubric_result=rubric_result,
+                    data_quality_result=dq_result,
+                    trace_data=trace_data,
                 )
                 with open(match_dir / "evaluation_record.json", "w") as f:
                     json.dump(eval_record, f, indent=2, default=str, ensure_ascii=False)
 
-                # Step 8: v1.5 Telegram draft
+                # Step 7a: Prediction record
+                from evaluation.prediction_tracker import build_prediction_record
+                pred_record = build_prediction_record(match_dir, round_config={
+                    "league": league, "round_number": round_number,
+                    "model_version": model_config.MODEL_VERSION,
+                })
+                with open(match_dir / "prediction_record.json", "w") as f:
+                    json.dump(pred_record, f, indent=2, default=str, ensure_ascii=False)
+
+                # Step 7b: Save trace
+                with open(match_dir / "trace.json", "w") as f:
+                    json.dump(trace_data, f, indent=2, default=str)
+
+                # Step 8: Telegram draft
                 drafts_dir = match_dir / "drafts"
                 drafts_dir.mkdir(exist_ok=True)
                 tg_v15 = render_telegram_v15(mi_result, report)
@@ -364,10 +558,42 @@ def generate_round(
                 print(f"    FAILED: {e}")
                 import traceback
                 traceback.print_exc()
+                # Save partial trace even on failure
+                try:
+                    with open(match_dir / "trace.json", "w") as f:
+                        json.dump(trace.to_dict(), f, indent=2, default=str)
+                except Exception:
+                    pass
 
         print("\n  Match Intelligence complete for all matches")
 
-    # 9. Print summary
+    # 9b. Build daily board
+    _build_board(rdir)
+
+    # 9c. Patch board_category + clarity_score into prediction records
+    board_path = rdir / "board.json"
+    if board_path.exists():
+        board_data = json.loads(board_path.read_text())
+        for entry in board_data.get("matches", []):
+            mid = str(entry.get("match_id", ""))
+            cat = entry.get("category")
+            cs = entry.get("clarity_score")
+            # Find the match dir for this match_id
+            matches_path = rdir / "matches"
+            if matches_path.exists():
+                for md in matches_path.iterdir():
+                    pred_p = md / "prediction_record.json"
+                    if not pred_p.exists():
+                        continue
+                    pr = json.loads(pred_p.read_text())
+                    if pr.get("match_id") == mid:
+                        pr["board_category"] = cat
+                        pr["clarity_score"] = cs
+                        with open(pred_p, "w") as f:
+                            json.dump(pr, f, indent=2, default=str, ensure_ascii=False)
+                        break
+
+    # 10. Print summary
     print(f"\nRound generated: {rdir}")
     print(f"  {len(reports)} matches")
 
@@ -403,10 +629,17 @@ def main() -> int:
     parser.add_argument("--season", default="2025/26", help="Season (default: 2025/26)")
     parser.add_argument("--intelligence", action="store_true",
                         help="Use v1.5 Match Intelligence Engine (game reading)")
-    parser.add_argument("--mi-model", default="gpt-4o",
-                        help="LLM model for Match Intelligence (default: gpt-4o)")
+    parser.add_argument("--mi-model", default="gpt-5.4",
+                        help="LLM model for Match Intelligence (default: gpt-5.4). "
+                        "Supports: gpt-5.4, gpt-4o, gpt-4.1, claude-opus-4-6, claude-sonnet-4-6, o3")
     parser.add_argument("--regenerate", action="store_true",
                         help="Force regenerate (skip cache)")
+    parser.add_argument("--rerender", action="store_true",
+                        help="Re-render telegram/plaintext from cached MI (no LLM calls)")
+    parser.add_argument("--board-only", action="store_true",
+                        help="Regenerate board from cached MI (no LLM calls)")
+    parser.add_argument("--publish", action="store_true",
+                        help="Restart telegram bot after generation (docker)")
 
     args = parser.parse_args()
 
@@ -418,7 +651,19 @@ def main() -> int:
         intelligence=args.intelligence,
         mi_model=args.mi_model,
         regenerate=args.regenerate,
+        rerender=args.rerender,
+        board_only=args.board_only,
     )
+
+    if args.publish or args.rerender:
+        import subprocess
+        print("\n  Restarting telegram bot...")
+        subprocess.run(
+            ["docker", "compose", "restart", "telegram-bot"],
+            cwd="/Users/joao/Projects/clarity-odds-core",
+        )
+        print("  Bot restarted.")
+
     return 0
 
 

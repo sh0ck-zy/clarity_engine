@@ -344,6 +344,7 @@ def get_matchup_analysis(
     team2: str | int,
     venue_for_team1: str = "home",
     round_number: Optional[int] = None,
+    league_id: Optional[int] = None,
 ) -> ToolResponse:
     """
     Analyze how two teams' styles match up.
@@ -375,13 +376,22 @@ def get_matchup_analysis(
         
         with db_cursor() as cur:
             # Get both teams' states
-            cur.execute(
-                """
-                SELECT * FROM team_states 
-                WHERE team_id IN (%s, %s) AND round_number = %s
-                """,
-                (team1_id, team2_id, round_number)
-            )
+            if league_id:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id IN (%s, %s) AND round_number = %s AND league_id = %s
+                    """,
+                    (team1_id, team2_id, round_number, league_id)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id IN (%s, %s) AND round_number = %s
+                    """,
+                    (team1_id, team2_id, round_number)
+                )
             states = {r["team_id"]: row_to_dict(r) for r in cur.fetchall()}
         
         if team1_id not in states or team2_id not in states:

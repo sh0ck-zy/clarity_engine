@@ -29,10 +29,11 @@ from .base import (
 def get_team_state(
     team: str | int,
     round_number: Optional[int] = None,
+    league_id: int = 47,
 ) -> ToolResponse:
     """
     Get the full 8-layer KG snapshot for a team at a specific round.
-    
+
     This is the primary tool for understanding a team's complete state:
     - Identity: Who they are
     - Position: Where they stand in the table
@@ -42,28 +43,29 @@ def get_team_state(
     - Defense: How they prevent goals
     - Home/Away: Venue performance split
     - Trajectory: Are they improving or declining?
-    
+
     Args:
         team: Team name or ID
         round_number: Round to query (default: latest)
-    
+        league_id: League to filter (default: 47 = Premier League)
+
     Returns:
         ToolResponse with full team state
     """
     try:
         team_id = resolve_team(team)
         team_name = get_team_name(team_id)
-        
+
         if round_number is None:
             round_number = get_current_round()
-        
+
         with db_cursor() as cur:
             cur.execute(
                 """
-                SELECT * FROM team_states 
-                WHERE team_id = %s AND round_number = %s
+                SELECT * FROM team_states
+                WHERE team_id = %s AND round_number = %s AND league_id = %s
                 """,
-                (team_id, round_number)
+                (team_id, round_number, league_id)
             )
             row = cur.fetchone()
             
@@ -171,6 +173,7 @@ def get_team_form(
     team: str | int,
     matches: int = 5,
     round_number: Optional[int] = None,
+    league_id: Optional[int] = None,
 ) -> ToolResponse:
     """
     Get detailed form analysis for a team.
@@ -199,21 +202,31 @@ def get_team_form(
         
         with db_cursor() as cur:
             # Get current state
-            cur.execute(
-                """
-                SELECT * FROM team_states 
-                WHERE team_id = %s AND round_number = %s
-                """,
-                (team_id, round_number)
-            )
+            if league_id:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id = %s AND round_number = %s AND league_id = %s
+                    """,
+                    (team_id, round_number, league_id)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id = %s AND round_number = %s
+                    ORDER BY league_id
+                    """,
+                    (team_id, round_number)
+                )
             current = cur.fetchone()
-            
+
             if not current:
                 return ToolResponse(
                     success=False,
                     error=f"No data for {team_name} at round {round_number}"
                 )
-            
+
             # Get recent matches for detailed breakdown
             cur.execute(
                 """
@@ -314,6 +327,7 @@ def get_team_form(
 def get_team_profile(
     team: str | int,
     round_number: Optional[int] = None,
+    league_id: Optional[int] = None,
 ) -> ToolResponse:
     """
     Get the playing style profile of a team.
@@ -340,23 +354,33 @@ def get_team_profile(
             round_number = get_current_round()
         
         with db_cursor() as cur:
-            cur.execute(
-                """
-                SELECT * FROM team_states 
-                WHERE team_id = %s AND round_number = %s
-                """,
-                (team_id, round_number)
-            )
+            if league_id:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id = %s AND round_number = %s AND league_id = %s
+                    """,
+                    (team_id, round_number, league_id)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT * FROM team_states
+                    WHERE team_id = %s AND round_number = %s
+                    ORDER BY league_id
+                    """,
+                    (team_id, round_number)
+                )
             row = cur.fetchone()
-            
+
             if not row:
                 return ToolResponse(
                     success=False,
                     error=f"No data for {team_name} at round {round_number}"
                 )
-            
+
             state = row_to_dict(row)
-        
+
         # Classify possession style
         possession = state["avg_possession"] or 50
         if possession >= 58:

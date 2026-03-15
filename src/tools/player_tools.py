@@ -51,21 +51,25 @@ def get_key_players(
         
         with db_cursor() as cur:
             # Get player states for this team at this round
+            # Fall back to latest available round if requested round has no data
             cur.execute(
                 """
-                SELECT 
+                SELECT
                     ps.*,
                     p.player_name,
                     p.position
                 FROM player_states ps
                 JOIN players p ON ps.player_id = p.player_id
-                WHERE ps.team_id = %s AND ps.round_number = %s
+                WHERE ps.team_id = %s AND ps.round_number = (
+                    SELECT MAX(round_number) FROM player_states
+                    WHERE team_id = %s AND round_number <= %s
+                )
                 ORDER BY ps.minutes DESC
                 """,
-                (team_id, round_number)
+                (team_id, team_id, round_number)
             )
             all_players = [row_to_dict(r) for r in cur.fetchall()]
-            
+
             if not all_players:
                 return ToolResponse(
                     success=False,
@@ -220,34 +224,40 @@ def get_injuries_impact(
             round_number = get_current_round()
         
         with db_cursor() as cur:
-            # Get current player states
+            # Get current player states (fall back to latest available round)
             cur.execute(
                 """
-                SELECT 
+                SELECT
                     ps.*,
                     p.player_name,
                     p.position
                 FROM player_states ps
                 JOIN players p ON ps.player_id = p.player_id
-                WHERE ps.team_id = %s AND ps.round_number = %s
+                WHERE ps.team_id = %s AND ps.round_number = (
+                    SELECT MAX(round_number) FROM player_states
+                    WHERE team_id = %s AND round_number <= %s
+                )
                 """,
-                (team_id, round_number)
+                (team_id, team_id, round_number)
             )
             current_players = {r["player_id"]: row_to_dict(r) for r in cur.fetchall()}
-            
+
             # Get previous round to compare
             if round_number > 1:
                 cur.execute(
                     """
-                    SELECT 
+                    SELECT
                         ps.*,
                         p.player_name,
                         p.position
                     FROM player_states ps
                     JOIN players p ON ps.player_id = p.player_id
-                    WHERE ps.team_id = %s AND ps.round_number = %s
+                    WHERE ps.team_id = %s AND ps.round_number = (
+                        SELECT MAX(round_number) FROM player_states
+                        WHERE team_id = %s AND round_number <= %s
+                    )
                     """,
-                    (team_id, round_number - 1)
+                    (team_id, team_id, round_number - 1)
                 )
                 prev_players = {r["player_id"]: row_to_dict(r) for r in cur.fetchall()}
             else:
