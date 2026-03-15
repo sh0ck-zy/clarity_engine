@@ -16,11 +16,11 @@ def get_connection():
         if not db_url:
             # Fallback for manual config if .env is missing/broken
             return psycopg2.connect(
-                dbname="clarity_football",
-                user="postgres",
-                password="password", # Update if needed
-                host="localhost",
-                port="5432"
+                dbname=os.getenv("DB_NAME", "clarity_football"),
+                user=os.getenv("DB_USER", "postgres"),
+                password=os.getenv("DB_PASSWORD", ""),
+                host=os.getenv("DB_HOST", "localhost"),
+                port=os.getenv("DB_PORT", "5432"),
             )
             
         return psycopg2.connect(db_url)
