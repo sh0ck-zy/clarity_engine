@@ -31,8 +31,8 @@ SEASONS = ["1819", "1920", "2021", "2122", "2223", "2324", "2425", "2526"]
 _BASE_URL = "https://www.football-data.co.uk/mmz4281"
 
 
-def download_csv(league_id: int, season: str, output_dir: Optional[Path] = None) -> Path:
-    """Download from football-data.co.uk. Skips if file exists."""
+def download_csv(league_id: int, season: str, output_dir: Optional[Path] = None, force: bool = False) -> Path:
+    """Download from football-data.co.uk. Skips if file exists unless force=True."""
     config = LEAGUE_CONFIG[league_id]
     code = config["code"]
     if output_dir is None:
@@ -42,9 +42,12 @@ def download_csv(league_id: int, season: str, output_dir: Optional[Path] = None)
     filename = f"{code}_{season}.csv"
     out_path = output_dir / filename
 
-    if out_path.exists():
+    if out_path.exists() and not force:
         logger.info("Already exists: %s", out_path)
         return out_path
+    elif out_path.exists() and force:
+        out_path.unlink()
+        logger.info("Removed stale CSV: %s", out_path)
 
     url = f"{_BASE_URL}/{season}/{code}.csv"
     logger.info("Downloading %s → %s", url, out_path)

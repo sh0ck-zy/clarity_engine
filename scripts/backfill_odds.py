@@ -29,6 +29,7 @@ def main() -> None:
     parser.add_argument("--league-id", type=int, help="Single league ID to process")
     parser.add_argument("--season", type=str, help="Single season to process (e.g. 2425)")
     parser.add_argument("--no-download", action="store_true", help="Skip download, parse existing CSVs only")
+    parser.add_argument("--force", action="store_true", help="Re-download even if CSV exists (refresh stale data)")
     args = parser.parse_args()
 
     leagues = {args.league_id: LEAGUE_CONFIG[args.league_id]} if args.league_id else LEAGUE_CONFIG
@@ -45,7 +46,7 @@ def main() -> None:
             # Download
             if not args.no_download:
                 try:
-                    csv_path = download_csv(league_id, season)
+                    csv_path = download_csv(league_id, season, force=args.force)
                 except Exception as e:
                     logger.warning("Download failed %s_%s: %s", code, season, e)
                     continue

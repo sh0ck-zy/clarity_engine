@@ -494,8 +494,11 @@ def generate_round(
                 match_market = None
                 mkt_key = (home, away)
                 if mkt_key in market_odds:
-                    mkt_h, mkt_d, mkt_a, *_ = market_odds[mkt_key]
-                    match_market = {"prob_H": mkt_h, "prob_D": mkt_d, "prob_A": mkt_a}
+                    mkt_h, mkt_d, mkt_a, raw_h, raw_d, raw_a = market_odds[mkt_key]
+                    match_market = {
+                        "prob_H": mkt_h, "prob_D": mkt_d, "prob_A": mkt_a,
+                        "odds_H": raw_h, "odds_D": raw_d, "odds_A": raw_a,
+                    }
 
                 lean_text = mi_result.get("lean", "")
                 decision = make_decision(

@@ -14,6 +14,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from models.ev_calculator import compute_ev
+
 
 @dataclass
 class Decision:
@@ -21,6 +23,7 @@ class Decision:
     direction: str       # "H" | "D" | "A" | None
     reasoning: list[str] = field(default_factory=list)
     edge_vs_market: float | None = None
+    ev: float | None = None  # (model_prob × decimal_odds) - 1
     directions: dict = field(default_factory=dict)  # resolved direction trace
 
     def to_dict(self) -> Dict[str, Any]:
@@ -29,6 +32,7 @@ class Decision:
             "direction": self.direction,
             "reasoning": self.reasoning,
             "edge_vs_market": round(self.edge_vs_market, 4) if self.edge_vs_market is not None else None,
+            "ev": round(self.ev, 4) if self.ev is not None else None,
             "directions": self.directions,
         }
 
@@ -83,18 +87,29 @@ def _compute_edge_vs_market(
     direction: str,
     ml_anchor: Dict[str, Any],
     market_odds: Optional[Dict[str, float]],
-) -> Optional[float]:
-    """Compute edge for a given direction against market odds."""
+) -> tuple[Optional[float], Optional[float]]:
+    """Compute probability edge and EV for a given direction.
+
+    Returns (prob_edge, ev) tuple.
+    """
     if not market_odds or not direction:
-        return None
+        return None, None
 
     probs = ml_anchor.get("probabilities", {})
     our_prob = probs.get(direction, 0.0)
     market_prob = market_odds.get(f"prob_{direction}", market_odds.get(direction, 0.0))
+    decimal_odds = market_odds.get(f"odds_{direction}")
+
+    prob_edge = None
+    ev = None
 
     if our_prob and market_prob:
-        return our_prob - market_prob
-    return None
+        prob_edge = our_prob - market_prob
+
+    if our_prob and decimal_odds and decimal_odds > 1.0:
+        ev = compute_ev(our_prob, decimal_odds)
+
+    return prob_edge, ev
 
 
 def infer_lean_direction(
@@ -240,22 +255,22 @@ def make_decision(
     }
 
     rubric_aligns = _rubric_aligns_with_direction(final_direction, tactical_rubric)
-    edge = _compute_edge_vs_market(final_direction, ml_anchor, market_odds)
+    edge, ev = _compute_edge_vs_market(final_direction, ml_anchor, market_odds)
 
     reasoning = []
 
     # === NO_BET ===
     if confidence_level == "Low":
         reasoning.append(f"confidence={confidence_level}")
-        return Decision("NO_BET", None, reasoning, edge, directions)
+        return Decision("NO_BET", None, reasoning, edge, ev, directions)
 
     if entropy > 0.997:
         reasoning.append(f"entropy={entropy:.3f} > 0.997 (true coin flip)")
-        return Decision("NO_BET", None, reasoning, edge, directions)
+        return Decision("NO_BET", None, reasoning, edge, ev, directions)
 
     if integrity_score < 60:
         reasoning.append(f"integrity_score={integrity_score:.0f} < 60")
-        return Decision("NO_BET", None, reasoning, edge, directions)
+        return Decision("NO_BET", None, reasoning, edge, ev, directions)
 
     # === PICK (highest bar) ===
     if (confidence_level in ("High", "Medium-High")
@@ -267,22 +282,22 @@ def make_decision(
         reasoning.append("rubric aligns, 0 signal conflicts, no direction divergence")
         if edge is not None and edge > 0.03:
             reasoning.append(f"edge_vs_market={edge:+.3f} > 0.03")
-            return Decision("PICK", final_direction, reasoning, edge, directions)
+            return Decision("PICK", final_direction, reasoning, edge, ev, directions)
         reasoning.append(f"edge_vs_market={edge:+.3f}" if edge is not None else "no market odds")
-        return Decision("LEAN", final_direction, reasoning, edge, directions)
+        return Decision("LEAN", final_direction, reasoning, edge, ev, directions)
 
     # === WATCHLIST ===
     if confidence_level == "Medium-Low":
         reasoning.append(f"confidence={confidence_level}")
-        return Decision("WATCHLIST", final_direction, reasoning, edge, directions)
+        return Decision("WATCHLIST", final_direction, reasoning, edge, ev, directions)
 
     if margin < 0.03:
         reasoning.append(f"margin={margin:.3f} < 0.03")
-        return Decision("WATCHLIST", final_direction, reasoning, edge, directions)
+        return Decision("WATCHLIST", final_direction, reasoning, edge, ev, directions)
 
     if signal_conflicts >= 2:
         reasoning.append(f"{signal_conflicts} signal conflicts")
-        return Decision("WATCHLIST", final_direction, reasoning, edge, directions)
+        return Decision("WATCHLIST", final_direction, reasoning, edge, ev, directions)
 
     # Divergence downgrades by one tier
     if has_divergence:
@@ -291,14 +306,14 @@ def make_decision(
             reasoning.append(override_reason)
         # Would-be LEAN becomes WATCHLIST, would-be PICK becomes LEAN (handled above)
         if confidence_level in ("High", "Medium-High") and rubric_aligns:
-            return Decision("LEAN", final_direction, reasoning, edge, directions)
-        return Decision("WATCHLIST", final_direction, reasoning, edge, directions)
+            return Decision("LEAN", final_direction, reasoning, edge, ev, directions)
+        return Decision("WATCHLIST", final_direction, reasoning, edge, ev, directions)
 
     # === LEAN (default for decent data + alignment) ===
     if rubric_aligns and signal_conflicts == 0:
         reasoning.append(f"confidence={confidence_level}, margin={margin:.2f}")
         reasoning.append("rubric aligns, no conflicts")
-        return Decision("LEAN", final_direction, reasoning, edge, directions)
+        return Decision("LEAN", final_direction, reasoning, edge, ev, directions)
 
     # Fallback: WATCHLIST
     reasoning.append(f"confidence={confidence_level}, margin={margin:.2f}")
@@ -306,4 +321,4 @@ def make_decision(
         reasoning.append("rubric does not align")
     if signal_conflicts:
         reasoning.append(f"{signal_conflicts} signal conflict(s)")
-    return Decision("WATCHLIST", final_direction, reasoning, edge, directions)
+    return Decision("WATCHLIST", final_direction, reasoning, edge, ev, directions)
