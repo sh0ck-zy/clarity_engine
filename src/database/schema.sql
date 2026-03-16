@@ -388,6 +388,7 @@ CREATE TABLE IF NOT EXISTS fotmob_matches (
     season            TEXT NOT NULL,
     round_number      INT,
     match_date        DATE NOT NULL,
+    kickoff_time      TIMESTAMP,
     home_team_id      INT NOT NULL,
     home_team_name    TEXT NOT NULL,
     away_team_id      INT NOT NULL,

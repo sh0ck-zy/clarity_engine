@@ -451,43 +451,62 @@ def generate_round(
                 # Step 4: Generate match intelligence (LLM with thinking)
                 print(f"    Reading the game [{mi_model}]...")
 
-                with TraceContext(trace, "llm_generate", "llm") as llm_ctx:
-                    mi_result = mi_engine.generate(
-                        match_pack=match_pack,
-                        ml_anchor=ml_anchor,
-                        match_signals=signals,
-                        tactical_rubric=tactical_rubric,
-                        cache_path=match_dir / "match_intelligence.json",
-                        regenerate=regenerate,
-                        confidence_level=confidence_level,
-                        data_warnings=dq_result.warnings if dq_result.warnings else None,
-                    )
-                    llm_trace = mi_result.get("_llm_trace", {})
-                    llm_ctx.metadata = llm_trace
+                mi_failed = False
+                try:
+                    with TraceContext(trace, "llm_generate", "llm") as llm_ctx:
+                        mi_result = mi_engine.generate(
+                            match_pack=match_pack,
+                            ml_anchor=ml_anchor,
+                            match_signals=signals,
+                            tactical_rubric=tactical_rubric,
+                            cache_path=match_dir / "match_intelligence.json",
+                            regenerate=regenerate,
+                            confidence_level=confidence_level,
+                            data_warnings=dq_result.warnings if dq_result.warnings else None,
+                        )
+                        llm_trace = mi_result.get("_llm_trace", {})
+                        llm_ctx.metadata = llm_trace
+                except Exception as mi_err:
+                    print(f"    MI failed ({mi_err}), running decision engine without narrative")
+                    mi_failed = True
+                    mi_result = {
+                        "schema_version": "1.8",
+                        "mi_status": "degraded",
+                        "reason": str(mi_err),
+                        "lean": "",
+                        "confidence": confidence_level,
+                    }
 
                 # Annotate MI result with data quality status
-                mi_result["mi_status"] = mi_status
+                mi_result["mi_status"] = "degraded" if mi_failed else mi_status
                 mi_result["completeness_score"] = round(dq_result.completeness_score, 1)
                 mi_result["integrity_score"] = round(dq_result.integrity_score, 1)
                 mi_result["critical_data_flags"] = dq_result.critical_flags
 
                 # Step 5: Validate
-                with TraceContext(trace, "validate", "validator") as val_ctx:
-                    validation = mi_validator.validate(mi_result, ml_anchor)
-                    val_ctx.metadata = {"score": validation.score}
-                print(f"    Validator score: {validation.score:.1f}/100"
-                      f" ({'PASS' if validation.score >= 60 else 'FAIL'})")
-                if validation.issues:
-                    for issue in validation.issues[:3]:
-                        print(f"      - [{issue['check']}] {issue['issue']}")
+                if not mi_failed:
+                    with TraceContext(trace, "validate", "validator") as val_ctx:
+                        validation = mi_validator.validate(mi_result, ml_anchor)
+                        val_ctx.metadata = {"score": validation.score}
+                    print(f"    Validator score: {validation.score:.1f}/100"
+                          f" ({'PASS' if validation.score >= 60 else 'FAIL'})")
+                    if validation.issues:
+                        for issue in validation.issues[:3]:
+                            print(f"      - [{issue['check']}] {issue['issue']}")
+                else:
+                    validation = type("V", (), {"score": 0, "issues": [], "components": {}})()
 
                 # Step 5b: Rubric scoring
-                with TraceContext(trace, "rubric_scoring", "validator") as rub_ctx:
-                    rubric_result = score_pre_match_rubric(
-                        mi_result, match_pack, ml_anchor, signals, dq_result.score
-                    )
-                    rub_ctx.metadata = {"score": rubric_result.score}
-                print(f"    Rubric score: {rubric_result.score:.1f}/100")
+                if not mi_failed:
+                    with TraceContext(trace, "rubric_scoring", "validator") as rub_ctx:
+                        rubric_result = score_pre_match_rubric(
+                            mi_result, match_pack, ml_anchor, signals, dq_result.score
+                        )
+                        rub_ctx.metadata = {"score": rubric_result.score}
+                    print(f"    Rubric score: {rubric_result.score:.1f}/100")
+                else:
+                    rubric_result = type("R", (), {"score": 0, "to_dict": lambda self: {}})()
+                    print("    Rubric: skipped (no MI)")
 
                 # Step 5c: Decision layer (post-MI, does NOT gate MI)
                 # Build market odds for this match
