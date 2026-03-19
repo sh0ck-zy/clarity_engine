@@ -67,3 +67,11 @@ src/models/feature_builder.py
 
 # Evaluation rubrics
 src/evaluation/rubric.py
+REVERT_INSTRUCTIONS.md
+
+# === Market Intelligence (hidden) ===
+src/odds/
+src/data/fetchers/odds.py
+scripts/backfill_odds.py
+tests/test_odds.py
+docs/STRATEGY_V16.md
