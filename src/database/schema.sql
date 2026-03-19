@@ -379,11 +379,11 @@ CREATE INDEX IF NOT EXISTS idx_evaluations_prompt ON analysis_evaluations(prompt
 CREATE INDEX IF NOT EXISTS idx_evaluations_report ON analysis_evaluations(report_id);
 
 -- ============================================================
--- FOTMOB TABLES
+-- PROVIDER TABLES
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS fotmob_matches (
-    fotmob_match_id   INT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS provider_matches (
+    provider_match_id   INT PRIMARY KEY,
     league_id         INT NOT NULL DEFAULT 47,
     season            TEXT NOT NULL,
     round_number      INT,
@@ -421,9 +421,9 @@ CREATE TABLE IF NOT EXISTS fotmob_matches (
     clarity_fixture_id TEXT
 );
 
-CREATE TABLE IF NOT EXISTS fotmob_player_performances (
+CREATE TABLE IF NOT EXISTS provider_player_performances (
     id SERIAL PRIMARY KEY,
-    fotmob_match_id   INT REFERENCES fotmob_matches(fotmob_match_id) ON DELETE CASCADE,
+    provider_match_id   INT REFERENCES provider_matches(provider_match_id) ON DELETE CASCADE,
     player_id         INT,
     player_name       TEXT NOT NULL,
     team_id           INT,
@@ -451,17 +451,17 @@ CREATE TABLE IF NOT EXISTS fotmob_player_performances (
     sub_in_minute     INT,
     sub_out_minute    INT,
     stats_json        JSONB,
-    UNIQUE(fotmob_match_id, player_id)
+    UNIQUE(provider_match_id, player_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_fpp_match ON fotmob_player_performances(fotmob_match_id);
-CREATE INDEX IF NOT EXISTS idx_fpp_player ON fotmob_player_performances(player_id);
-CREATE INDEX IF NOT EXISTS idx_fpp_player_name ON fotmob_player_performances(player_name);
-CREATE INDEX IF NOT EXISTS idx_fpp_rating ON fotmob_player_performances(rating);
-CREATE INDEX IF NOT EXISTS idx_fpp_team ON fotmob_player_performances(team_name);
-CREATE INDEX IF NOT EXISTS idx_fotmob_matches_date ON fotmob_matches(match_date);
-CREATE INDEX IF NOT EXISTS idx_fotmob_matches_round ON fotmob_matches(round_number);
-CREATE INDEX IF NOT EXISTS idx_fotmob_matches_season ON fotmob_matches(season);
+CREATE INDEX IF NOT EXISTS idx_fpp_match ON provider_player_performances(provider_match_id);
+CREATE INDEX IF NOT EXISTS idx_fpp_player ON provider_player_performances(player_id);
+CREATE INDEX IF NOT EXISTS idx_fpp_player_name ON provider_player_performances(player_name);
+CREATE INDEX IF NOT EXISTS idx_fpp_rating ON provider_player_performances(rating);
+CREATE INDEX IF NOT EXISTS idx_fpp_team ON provider_player_performances(team_name);
+CREATE INDEX IF NOT EXISTS idx_provider_matches_date ON provider_matches(match_date);
+CREATE INDEX IF NOT EXISTS idx_provider_matches_round ON provider_matches(round_number);
+CREATE INDEX IF NOT EXISTS idx_provider_matches_season ON provider_matches(season);
 
 -- 6. ANALYTICAL VIEW (The "Smart" Layer)
 -- This is the block you were asking for!

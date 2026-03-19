@@ -34,7 +34,7 @@ def _load_results(league_id: int, round_number: int) -> dict:
 
     sql = """
     SELECT
-        fotmob_match_id,
+        provider_match_id,
         home_team_name,
         away_team_name,
         home_score,
@@ -42,7 +42,7 @@ def _load_results(league_id: int, round_number: int) -> dict:
         status,
         stats,
         events
-    FROM fotmob_matches
+    FROM provider_matches
     WHERE round_number = %(rn)s AND league_id = %(lid)s AND status = 'finished'
     """
     conn = get_connection()
@@ -72,11 +72,11 @@ def _load_results(league_id: int, round_number: int) -> dict:
 
         # Extract actual facts from stats/events
         facts = extract_actual_facts(
-            row["fotmob_match_id"], hs, aws, actual,
+            row["provider_match_id"], hs, aws, actual,
             row.get("stats"), row.get("events"),
         )
 
-        results[str(row["fotmob_match_id"])] = {
+        results[str(row["provider_match_id"])] = {
             "actual_result": actual,
             "home_score": hs,
             "away_score": aws,
@@ -192,7 +192,7 @@ def _extract_goals(events: list) -> list:
     for event in events:
         if not isinstance(event, dict):
             continue
-        # FotMob events have type "Goal" or similar
+        # provider events have type "Goal" or similar
         event_type = event.get("type", "")
         if "Goal" in str(event_type) or event.get("isGoal"):
             minute = event.get("time", event.get("minute", 0))
@@ -439,7 +439,7 @@ def _print_pnl_summary(track: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Backfill actual results into evaluation records")
     parser.add_argument("round", help="Round label (e.g. PL_R28)")
-    parser.add_argument("--league-id", type=int, default=47, help="FotMob league ID")
+    parser.add_argument("--league-id", type=int, default=47, help="provider league ID")
     args = parser.parse_args()
 
     backfill_round(args.round, league_id=args.league_id)

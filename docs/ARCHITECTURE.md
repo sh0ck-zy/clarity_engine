@@ -29,7 +29,7 @@
 
 | Source | Type | Data | Status |
 |--------|------|------|--------|
-| **FotMob** | Primary | Matches, players, shotmaps, momentum | ✅ 260 matches |
+| **external APIs** | Primary | Matches, players, shotmaps, momentum | ✅ 260 matches |
 | **API-Football** | Secondary | Fixtures, odds, standings | ✅ Available |
 | **News Aggregator** | Text | News, articles, expert analysis | ✅ BetHub has this |
 | **Reddit** | Social | Discussions, sentiment | ✅ In aggregator |
@@ -71,7 +71,7 @@ class SourceProvider(ABC):
     async def load(self, data: NormalizedData) -> None: ...
 
 # Implementations
-class FotMobProvider(SourceProvider): ...
+class external APIsProvider(SourceProvider): ...
 class APIFootballProvider(SourceProvider): ...
 class NewsAggregatorProvider(SourceProvider): ...
 ```
@@ -89,7 +89,7 @@ The Knowledge Base stores everything we know, organized by type:
   "entity": "team:arsenal",
   "attribute": "xg_last_5",
   "value": 1.82,
-  "source": "fotmob",
+  "source": "external data",
   "timestamp": "2026-02-15T10:00:00Z"
 }
 ```
@@ -403,8 +403,8 @@ class LearningAgent:
 1. TRIGGER: Match in 48h
    │
 2. RESEARCH AGENT
-   ├── Fetch team stats (FotMob)
-   ├── Fetch H2H (FotMob)
+   ├── Fetch team stats (external APIs)
+   ├── Fetch H2H (external APIs)
    ├── Fetch news (News Aggregator)
    ├── Fetch articles (RSS, scrapers)
    └── Fetch odds (API-Football)
@@ -433,7 +433,7 @@ class LearningAgent:
 1. TRIGGER: Match ended
    │
 2. FETCH RESULTS
-   ├── Match stats (FotMob)
+   ├── Match stats (external APIs)
    ├── Player performances
    └── Events timeline
    │
@@ -484,7 +484,7 @@ clarity_engine/
 │   │
 │   ├── sources/                   # Data providers
 │   │   ├── base.py                # SourceProvider ABC
-│   │   ├── fotmob/
+│   │   ├── external data/
 │   │   ├── api_football/
 │   │   └── news/                  # Link to BetHub aggregator
 │   │

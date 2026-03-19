@@ -31,7 +31,7 @@ def get_key_players(
     Identifies the most influential players by:
     - Goal contributions (goals + assists)
     - Minutes played (regular starters)
-    - Rating (FotMob rating)
+    - Rating (data provider rating)
     - xG/xA output
     
     Args:

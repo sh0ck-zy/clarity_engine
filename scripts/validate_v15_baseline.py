@@ -307,9 +307,9 @@ def _load_results_from_db(league_id: int, round_number: int, debug: bool = False
     from database.config import get_connection
 
     sql = """
-    SELECT fotmob_match_id, home_team_name, away_team_name,
+    SELECT provider_match_id, home_team_name, away_team_name,
            home_score, away_score, status, raw_json
-    FROM fotmob_matches
+    FROM provider_matches
     WHERE round_number = %(rn)s AND league_id = %(lid)s
       AND status IN ('finished', 'ft', 'aet')
     """
@@ -329,7 +329,7 @@ def _load_results_from_db(league_id: int, round_number: int, debug: bool = False
     results = {}
     for row in rows:
         rd = dict(zip(col_names, row))
-        match_id = str(rd["fotmob_match_id"])
+        match_id = str(rd["provider_match_id"])
         hs = rd["home_score"]
         aws = rd["away_score"]
 

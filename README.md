@@ -92,7 +92,7 @@ The system generates the left column, not the right.
 │  │   LAYER     │    │    GRAPH    │    │   AGENTS    │     │
 │  └─────────────┘    └─────────────┘    └─────────────┘     │
 │        │                   │                  │             │
-│   FotMob, APIs       8-layer team       17 tools +         │
+│   external APIs, APIs       8-layer team       17 tools +         │
 │   Match data         state profiles      reasoning         │
 │                                                             │
 ├─────────────────────────────────────────────────────────────┤

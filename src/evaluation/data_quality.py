@@ -73,6 +73,20 @@ def check_match_pack_quality(match_pack: Dict[str, Any]) -> DataQualityResult:
     """
     result = DataQualityResult()
 
+    # Per-team xG absence detection: if a team has xG=0 across all fields,
+    # the data source doesn't provide xG for that team's matches (e.g. some
+    # Brasileirão teams on provider). Treat as missing data (completeness)
+    # rather than corruption (integrity).
+    _team_has_no_xg = {}
+    for _side in ("home", "away"):
+        _form = match_pack.get(_side, {}).get("state", {}).get("form", {})
+        _attack = match_pack.get(_side, {}).get("attack_profile", {})
+        _team_has_no_xg[_side] = (
+            _form.get("xg_for_last5") in (0, 0.0, None)
+            and _form.get("xg_against_last5") in (0, 0.0, None)
+            and _attack.get("xg_per_game") in (0, 0.0, None)
+        )
+
     for side in ("home", "away"):
         team_name = _get_nested(match_pack, "fixture", f"{side}_team", default=side)
         team = match_pack.get(side, {})
@@ -120,7 +134,7 @@ def check_match_pack_quality(match_pack: Dict[str, Any]) -> DataQualityResult:
 
         # === INTEGRITY CHECKS (do fields make sense?) ===
 
-        # xG=0 but goals > 0: -30
+        # xG=0 but goals > 0
         xg_for = form.get("xg_for_last5")
         goals_last5 = form_detail.get("goals", {}).get("scored", 0) or 0
         form_string = form.get("form_string", "")
@@ -128,46 +142,80 @@ def check_match_pack_quality(match_pack: Dict[str, Any]) -> DataQualityResult:
 
         if xg_for is not None and (xg_for == 0 or xg_for == 0.0):
             if goals_last5 > 0 or wins_from_form > 0:
-                result.integrity_issues.append({
-                    "field": f"{side}.state.form.xg_for_last5",
-                    "issue": f"xG=0.0 but {team_name} scored {goals_last5} goals in last 5",
-                    "severity": "high",
-                })
-                result.integrity_score -= 30
+                if _team_has_no_xg[side]:
+                    # League doesn't provide xG — treat as missing data, not corruption
+                    result.completeness_issues.append({
+                        "field": f"{side}.state.form.xg_for_last5",
+                        "issue": f"{team_name} xG unavailable from data source",
+                        "severity": "low",
+                    })
+                    result.completeness_score -= 5
+                else:
+                    result.integrity_issues.append({
+                        "field": f"{side}.state.form.xg_for_last5",
+                        "issue": f"xG=0.0 but {team_name} scored {goals_last5} goals in last 5",
+                        "severity": "high",
+                    })
+                    result.integrity_score -= 30
 
-        # xGA=0 but conceded > 0: -30
+        # xGA=0 but conceded > 0
         xg_against = form.get("xg_against_last5")
         goals_conceded = form_detail.get("goals", {}).get("conceded", 0) or 0
         if xg_against is not None and (xg_against == 0 or xg_against == 0.0):
             if goals_conceded > 0:
-                result.integrity_issues.append({
-                    "field": f"{side}.state.form.xg_against_last5",
-                    "issue": f"xGA=0.0 but {team_name} conceded {goals_conceded} goals in last 5",
-                    "severity": "high",
-                })
-                result.integrity_score -= 30
+                if _team_has_no_xg[side]:
+                    result.completeness_issues.append({
+                        "field": f"{side}.state.form.xg_against_last5",
+                        "issue": f"{team_name} xGA unavailable from data source",
+                        "severity": "low",
+                    })
+                    result.completeness_score -= 5
+                else:
+                    result.integrity_issues.append({
+                        "field": f"{side}.state.form.xg_against_last5",
+                        "issue": f"xGA=0.0 but {team_name} conceded {goals_conceded} goals in last 5",
+                        "severity": "high",
+                    })
+                    result.integrity_score -= 30
 
-        # Possession exactly 50.0%: -20
+        # Possession exactly 50.0%
         possession = _get_nested(state, "style", "avg_possession", default=None)
         if possession is not None and possession == 50.0:
-            result.integrity_issues.append({
-                "field": f"{side}.state.style.avg_possession",
-                "issue": f"{team_name} possession exactly 50.0% — likely default/missing",
-                "severity": "high",
-            })
-            result.integrity_score -= 20
+            if _team_has_no_xg[side]:
+                # Likely same data-source limitation — downgrade
+                result.completeness_issues.append({
+                    "field": f"{side}.state.style.avg_possession",
+                    "issue": f"{team_name} possession unavailable from data source",
+                    "severity": "medium",
+                })
+                result.completeness_score -= 5
+            else:
+                result.integrity_issues.append({
+                    "field": f"{side}.state.style.avg_possession",
+                    "issue": f"{team_name} possession exactly 50.0% — likely default/missing",
+                    "severity": "high",
+                })
+                result.integrity_score -= 20
 
-        # xG/game=0 but goals > 3: -20
+        # xG/game=0 but goals > 3
         attack = team.get("attack_profile", {})
         xg_per_game = attack.get("xg_per_game", None)
         if xg_per_game is not None and (xg_per_game == 0 or xg_per_game == 0.0):
             if goals_last5 > 3:
-                result.integrity_issues.append({
-                    "field": f"{side}.attack_profile.xg_per_game",
-                    "issue": f"xG/game=0 but {team_name} scored {goals_last5} in last 5",
-                    "severity": "high",
-                })
-                result.integrity_score -= 20
+                if _team_has_no_xg[side]:
+                    result.completeness_issues.append({
+                        "field": f"{side}.attack_profile.xg_per_game",
+                        "issue": f"{team_name} xG/game unavailable from data source",
+                        "severity": "medium",
+                    })
+                    result.completeness_score -= 5
+                else:
+                    result.integrity_issues.append({
+                        "field": f"{side}.attack_profile.xg_per_game",
+                        "issue": f"xG/game=0 but {team_name} scored {goals_last5} in last 5",
+                        "severity": "high",
+                    })
+                    result.integrity_score -= 20
 
         # Form string != form points: -10
         form_points = form.get("form_points")

@@ -31,7 +31,7 @@ Team:
   description: "Um clube de futebol"
   properties:
     id: string (PK)           # "liverpool"
-    fotmob_id: int            # ID do FotMob
+    external data_id: int            # ID do external APIs
     name: string              # "Liverpool"
     short_name: string        # "LIV"
     country: string           # "England"
@@ -42,8 +42,8 @@ Team:
     logo_url: string
     
   examples:
-    - { id: "liverpool", name: "Liverpool", short_name: "LIV", fotmob_id: 8650 }
-    - { id: "arsenal", name: "Arsenal", short_name: "ARS", fotmob_id: 9825 }
+    - { id: "liverpool", name: "Liverpool", short_name: "LIV", external data_id: 8650 }
+    - { id: "arsenal", name: "Arsenal", short_name: "ARS", external data_id: 9825 }
 ```
 
 ### 1.3 Player
@@ -52,7 +52,7 @@ Player:
   description: "Um jogador"
   properties:
     id: string (PK)           # "mohamed-salah"
-    fotmob_id: int            # ID do FotMob
+    external data_id: int            # ID do external APIs
     name: string              # "Mohamed Salah"
     short_name: string        # "M. Salah"
     nationality: string       # "Egypt"
@@ -91,7 +91,7 @@ Match:
   description: "Um jogo"
   properties:
     id: string (PK)           # "pl-25-26-r26-liv-ars"
-    fotmob_id: int            # ID do FotMob
+    external data_id: int            # ID do external APIs
     competition_id: string (FK)
     round_id: string (FK)
     home_team_id: string (FK)
@@ -494,7 +494,7 @@ CREATE TABLE competitions (
 
 CREATE TABLE teams (
     id TEXT PRIMARY KEY,
-    fotmob_id INT UNIQUE,
+    external data_id INT UNIQUE,
     name TEXT NOT NULL,
     short_name TEXT,
     country TEXT,
@@ -504,7 +504,7 @@ CREATE TABLE teams (
 
 CREATE TABLE players (
     id TEXT PRIMARY KEY,
-    fotmob_id INT UNIQUE,
+    external data_id INT UNIQUE,
     name TEXT NOT NULL,
     short_name TEXT,
     nationality TEXT,
@@ -524,7 +524,7 @@ CREATE TABLE rounds (
 
 CREATE TABLE matches (
     id TEXT PRIMARY KEY,
-    fotmob_id INT UNIQUE,
+    external data_id INT UNIQUE,
     competition_id TEXT REFERENCES competitions(id),
     round_id TEXT REFERENCES rounds(id),
     home_team_id TEXT REFERENCES teams(id),
@@ -622,11 +622,11 @@ CREATE INDEX idx_performances_player ON match_performances(player_id);
 
 ---
 
-## 6. ETL: FotMob → KG
+## 6. ETL: external APIs → KG
 
 ```
-fotmob_matches           →  matches + match_stats
-fotmob_player_perfs      →  match_performances
+external data_matches           →  matches + match_stats
+external data_player_perfs      →  match_performances
                          
 Derivar:                 
   matches (per round)    →  team_states
@@ -639,7 +639,7 @@ Derivar:
 
 1. [ ] Validar esta ontologia
 2. [ ] Criar as tabelas no Postgres
-3. [ ] Escrever ETL para popular do FotMob
+3. [ ] Escrever ETL para popular do external APIs
 4. [ ] Calcular team_states e player_states
 5. [ ] Criar queries para intelligence
 6. [ ] Ligar ao UI

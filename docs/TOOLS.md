@@ -185,11 +185,11 @@ class ToolResponse:
 Teams can be specified by:
 - **Name:** "Arsenal", "Manchester City"
 - **Partial name:** "City", "Man United"
-- **ID:** 8456 (FotMob team ID)
+- **ID:** 8456 (external APIs team ID)
 
 ## Data Sources
 
-- **Primary:** FotMob (via `fotmob_matches`, `fotmob_player_performances`)
+- **Primary:** external APIs (via `external data_matches`, `external data_player_performances`)
 - **Aggregated:** `team_states`, `player_states` (per-round snapshots)
 - **Secondary:** API-Football (odds, standings) - pending integration
 

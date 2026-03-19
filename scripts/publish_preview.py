@@ -302,7 +302,7 @@ def main() -> int:
         "--league-id",
         type=int,
         default=None,
-        help="FotMob league ID to filter by (47=PL, 61=Portugal, 268=Brazil)",
+        help="provider league ID to filter by (47=PL, 61=Portugal, 268=Brazil)",
     )
     parser.add_argument(
         "--output-dir",

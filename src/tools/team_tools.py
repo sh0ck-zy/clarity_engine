@@ -57,7 +57,7 @@ def get_team_state(
         team_name = get_team_name(team_id)
 
         if round_number is None:
-            round_number = get_current_round()
+            round_number = get_current_round(league_id)
 
         with db_cursor() as cur:
             cur.execute(
@@ -241,7 +241,7 @@ def get_team_form(
                         WHEN fm.home_team_id = %s THEN 'home'
                         ELSE 'away'
                     END as venue
-                FROM fotmob_matches fm
+                FROM provider_matches fm
                 WHERE (fm.home_team_id = %s OR fm.away_team_id = %s)
                     AND fm.round_number <= %s
                     AND fm.round_number > %s
@@ -519,7 +519,7 @@ def get_formation_history(
                     fm.formation_away,
                     fm.home_score,
                     fm.away_score
-                FROM fotmob_matches fm
+                FROM provider_matches fm
                 WHERE (fm.home_team_id = %s OR fm.away_team_id = %s)
                     AND fm.round_number <= %s
                 ORDER BY fm.round_number DESC

@@ -2,7 +2,7 @@
 """
 Populate Knowledge Graph States
 
-Reads fotmob_matches and fotmob_player_performances,
+Reads provider_matches and provider_player_performances,
 computes team_states and player_states for each round.
 
 Usage:
@@ -109,7 +109,7 @@ def _parse_stats_new_format(stats_json: dict) -> dict:
 def _parse_stats_legacy_format(stats_json: dict) -> dict:
     """Parse stats from legacy PL backfill format (stringified dataclass repr).
 
-    Structure: {"All": ["FotMobStatCategory(title='Top stats', ...)", ...]}
+    Structure: {"All": ["providerStatCategory(title='Top stats', ...)", ...]}
     """
     result = {
         "possession_home": None, "possession_away": None,
@@ -158,7 +158,7 @@ def _parse_stats_legacy_format(stats_json: dict) -> dict:
 
 
 def parse_stats_json(stats_json: dict) -> dict:
-    """Parse the FotMob stats JSON to extract key metrics.
+    """Parse the provider stats JSON to extract key metrics.
 
     Handles two formats:
     - New (Scrapling __NEXT_DATA__): dict with "Periods" key → clean JSON tree
@@ -198,13 +198,13 @@ def get_team_matches(conn, league_id: int = 47) -> Dict[int, List[MatchResult]]:
 
     cur.execute("""
         SELECT
-            fotmob_match_id, round_number, match_date,
+            provider_match_id, round_number, match_date,
             home_team_id, home_team_name, away_team_id, away_team_name,
             home_score, away_score,
             formation_home, formation_away,
             stats,
             kickoff_time
-        FROM fotmob_matches
+        FROM provider_matches
         WHERE status = 'finished' AND round_number IS NOT NULL
             AND league_id = %s
         ORDER BY round_number, match_date
@@ -453,14 +453,14 @@ def calculate_positions(team_states: List[dict], round_number: int) -> None:
 
 
 def populate_players(conn, league_id: int) -> int:
-    """Populate players table from fotmob_player_performances."""
+    """Populate players table from provider_player_performances."""
     cur = conn.cursor()
     cur.execute("""
         INSERT INTO players (player_id, player_name, current_team_id)
         SELECT DISTINCT ON (fpp.player_id)
             fpp.player_id, fpp.player_name, fpp.team_id
-        FROM fotmob_player_performances fpp
-        JOIN fotmob_matches fm ON fm.fotmob_match_id = fpp.fotmob_match_id
+        FROM provider_player_performances fpp
+        JOIN provider_matches fm ON fm.provider_match_id = fpp.provider_match_id
         WHERE fm.league_id = %s
           AND fpp.player_id IS NOT NULL
         ORDER BY fpp.player_id, fm.match_date DESC
@@ -482,8 +482,8 @@ def get_player_match_data(conn, league_id: int) -> Dict[int, List[dict]]:
             fpp.player_id, fpp.team_id, fm.round_number, fm.match_date,
             fpp.is_starter, fpp.minutes_played,
             fpp.goals, fpp.assists, fpp.xg, fpp.xa, fpp.rating
-        FROM fotmob_player_performances fpp
-        JOIN fotmob_matches fm ON fm.fotmob_match_id = fpp.fotmob_match_id
+        FROM provider_player_performances fpp
+        JOIN provider_matches fm ON fm.provider_match_id = fpp.provider_match_id
         WHERE fm.league_id = %s
           AND fm.status = 'finished'
           AND fm.round_number IS NOT NULL
@@ -664,8 +664,8 @@ def populate_player_states(conn, league_id: int) -> int:
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Populate team states from FotMob matches")
-    parser.add_argument("--league-id", type=int, default=47, help="FotMob league ID (default: 47 = PL)")
+    parser = argparse.ArgumentParser(description="Populate team states from provider matches")
+    parser.add_argument("--league-id", type=int, default=47, help="provider league ID (default: 47 = PL)")
     args = parser.parse_args()
 
     league_id = args.league_id
@@ -702,7 +702,7 @@ def main():
         cur.execute("""
             INSERT INTO teams (team_id, team_name, league_id)
             SELECT DISTINCT home_team_id, home_team_name, league_id
-            FROM fotmob_matches
+            FROM provider_matches
             WHERE league_id = %s
             ON CONFLICT (team_id) DO UPDATE SET
                 league_id = EXCLUDED.league_id

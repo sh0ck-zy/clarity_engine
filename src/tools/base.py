@@ -194,12 +194,15 @@ def get_team_name(team_id: int) -> str:
     return f"Unknown ({team_id})"
 
 
-def get_current_round() -> int:
-    """Get the latest round number in the database."""
+def get_current_round(league_id: int = 47) -> int:
+    """Get the latest round number in the database for a given league."""
     with db_cursor() as cur:
-        cur.execute("SELECT MAX(round_number) as max_round FROM team_states")
+        cur.execute(
+            "SELECT MAX(round_number) as max_round FROM team_states WHERE league_id = %s",
+            (league_id,)
+        )
         row = cur.fetchone()
-        return row["max_round"] if row else 1
+        return row["max_round"] if row and row["max_round"] else 1
 
 
 # ============================================================================
@@ -314,7 +317,7 @@ def get_formation_under_current_manager(team_id: int, round_number: int) -> Opti
         cur.execute("""
             SELECT 
                 CASE WHEN home_team_id = %s THEN formation_home ELSE formation_away END as formation
-            FROM fotmob_matches
+            FROM provider_matches
             WHERE (home_team_id = %s OR away_team_id = %s)
               AND round_number >= %s
               AND round_number <= %s

@@ -135,7 +135,7 @@ def get_psychological_state(
                     round_number,
                     CASE WHEN home_team_id = %s THEN home_score ELSE away_score END as goals_for,
                     CASE WHEN home_team_id = %s THEN away_score ELSE home_score END as goals_against
-                FROM fotmob_matches
+                FROM provider_matches
                 WHERE (home_team_id = %s OR away_team_id = %s)
                     AND round_number <= %s
                 ORDER BY round_number DESC

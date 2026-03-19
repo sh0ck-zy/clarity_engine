@@ -24,9 +24,9 @@ from data.loaders.elo import get_elo_for_date, ELO_MAPPING
 
 CACHE_DIR = _PROJECT_ROOT / "data" / "cache" / "elo"
 
-# Direct FotMob team name -> ClubELO club name mapping
-# FotMob uses full official names; ClubELO uses shorter forms
-_FOTMOB_TO_ELO: Dict[str, str] = {
+# Direct provider team name -> ClubELO club name mapping
+# provider uses full official names; ClubELO uses shorter forms
+_PROVIDER_TO_ELO: Dict[str, str] = {
     "AFC Bournemouth": "Bournemouth",
     "Arsenal": "Arsenal",
     "Aston Villa": "Aston Villa",
@@ -51,7 +51,7 @@ _FOTMOB_TO_ELO: Dict[str, str] = {
     "Wolverhampton Wanderers": "Wolves",
     "Ipswich Town": "Ipswich",
     "Luton Town": "Luton",
-    # Portuguese teams (FotMob name -> ClubELO name)
+    # Portuguese teams (provider name -> ClubELO name)
     "Sporting CP": "Sporting",
     "SL Benfica": "Benfica",
     "FC Porto": "Porto",
@@ -78,8 +78,8 @@ _FOTMOB_TO_ELO: Dict[str, str] = {
 }
 # Also populate from the existing ELO_MAPPING (ClubELO -> short name)
 for elo_name, short_name in ELO_MAPPING.items():
-    if short_name not in _FOTMOB_TO_ELO:
-        _FOTMOB_TO_ELO[short_name] = elo_name
+    if short_name not in _PROVIDER_TO_ELO:
+        _PROVIDER_TO_ELO[short_name] = elo_name
 
 
 def _cache_path(d: date) -> Path:
@@ -133,13 +133,13 @@ def _fetch_and_cache(d: date, countries: Optional[List[str]] = None) -> Dict[str
         for _, row in df_filtered.iterrows():
             club_name = row["Club"]
             elo_value = float(row["Elo"])
-            # Store under both ClubELO name and FotMob name
+            # Store under both ClubELO name and provider name
             ratings[club_name] = elo_value
-            fotmob_name = ELO_MAPPING.get(club_name)
-            if fotmob_name and fotmob_name != club_name:
-                ratings[fotmob_name] = elo_value
-            # Also check the FotMob-to-ELO reverse mapping
-            for fm_name, elo_name in _FOTMOB_TO_ELO.items():
+            provider_name = ELO_MAPPING.get(club_name)
+            if provider_name and provider_name != club_name:
+                ratings[provider_name] = elo_value
+            # Also check the provider-to-ELO reverse mapping
+            for fm_name, elo_name in _PROVIDER_TO_ELO.items():
                 if elo_name == club_name and fm_name not in ratings:
                     ratings[fm_name] = elo_value
 
@@ -172,8 +172,8 @@ def get_team_elo(
     if team_name in ratings:
         return ratings[team_name]
 
-    # Try FotMob -> ClubELO mapping
-    elo_name = _FOTMOB_TO_ELO.get(team_name)
+    # Try provider -> ClubELO mapping
+    elo_name = _PROVIDER_TO_ELO.get(team_name)
     if elo_name and elo_name in ratings:
         return ratings[elo_name]
 

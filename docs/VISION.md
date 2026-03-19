@@ -7,7 +7,7 @@
 
 ## The Problem
 
-Current football analytics (FotMob, Sofascore, etc.) show you **WHAT happened**:
+Current football analytics (external APIs, Sofascore, etc.) show you **WHAT happened**:
 - Possession: 58%
 - Shots: 14
 - xG: 1.82
@@ -76,8 +76,8 @@ overcommit, Salah punishes.
 Can Arsenal exploit the left channel?
 
 EVIDENCE FOR:
-• Trent: 41% duels won vs fast wingers (FotMob)
-• Martinelli: 2.4 successful dribbles/90 (FotMob)
+• Trent: 41% duels won vs fast wingers (external APIs)
+• Martinelli: 2.4 successful dribbles/90 (external APIs)
 • Klopp addressed this in Friday presser (The Athletic)
 
 EVIDENCE AGAINST:
@@ -127,7 +127,7 @@ More robust to variance. Reveals causality.
 
 ### 4. Numbers Aren't Enough
 We need:
-- Stats (FotMob, API-Football)
+- Stats (external APIs, API-Football)
 - Context (news, injuries, motivation)
 - Expert analysis (The Athletic, Tifo, podcasts)
 - Historical patterns
@@ -165,7 +165,7 @@ The system gets better over time.
 
 ## Differentiation
 
-| Aspect | FotMob/Sofascore | Clarity |
+| Aspect | external APIs/Sofascore | Clarity |
 |--------|------------------|---------|
 | Focus | What happened | What will happen |
 | Format | Data tables | Narrative |

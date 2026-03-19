@@ -54,7 +54,7 @@ def get_last_match_summary(
             # Get the most recent match
             cur.execute(
                 """
-                SELECT * FROM fotmob_matches
+                SELECT * FROM provider_matches
                 WHERE (home_team_id = %s OR away_team_id = %s)
                     AND round_number <= %s
                 ORDER BY round_number DESC
@@ -79,12 +79,12 @@ def get_last_match_summary(
                     pp.*,
                     p.player_name,
                     p.position
-                FROM fotmob_player_performances pp
+                FROM provider_player_performances pp
                 JOIN players p ON pp.player_id = p.player_id
-                WHERE pp.fotmob_match_id = %s
+                WHERE pp.provider_match_id = %s
                 ORDER BY pp.rating DESC NULLS LAST
                 """,
-                (match["fotmob_match_id"],)
+                (match["provider_match_id"],)
             )
             performances = [row_to_dict(r) for r in cur.fetchall()]
         
@@ -128,7 +128,7 @@ def get_last_match_summary(
         scorers = [p for p in team_performances if p["goals"] and p["goals"] > 0]
         
         summary_data = {
-            "match_id": match["fotmob_match_id"],
+            "match_id": match["provider_match_id"],
             "round": match["round_number"],
             "date": match["match_date"],
             "venue": "Home" if is_home else "Away",
@@ -215,7 +215,7 @@ def get_h2h(
             # Get matches between these teams up to the specified round
             cur.execute(
                 """
-                SELECT * FROM fotmob_matches
+                SELECT * FROM provider_matches
                 WHERE ((home_team_id = %s AND away_team_id = %s)
                    OR (home_team_id = %s AND away_team_id = %s))
                    AND round_number <= %s

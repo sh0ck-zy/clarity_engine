@@ -53,7 +53,7 @@ v14_vs_v15_comparison.md
 
 # === IP Protection (hidden from public repo) ===
 # Data scrapers
-scripts/sync_fotmob_playwright.py
+scripts/sync_provider_models_playwright.py
 src/data/providers/zerozero.py
 
 # Core intelligence (prompts, decision logic)
@@ -75,3 +75,4 @@ src/data/fetchers/odds.py
 scripts/backfill_odds.py
 tests/test_odds.py
 docs/STRATEGY_V16.md
+src/models/provider_models.py

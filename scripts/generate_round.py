@@ -69,7 +69,7 @@ def _load_raw_stats(league_id: int, round_number: int) -> pd.DataFrame:
 
     sql = """
     SELECT
-        m.fotmob_match_id,
+        m.provider_match_id,
         m.home_team_name, m.away_team_name,
         h.position AS home_position,
         h.goal_difference AS home_goal_diff,
@@ -85,7 +85,7 @@ def _load_raw_stats(league_id: int, round_number: int) -> pd.DataFrame:
         a.away_points AS away_venue_points,
         a.played AS away_played,
         a.clean_sheets_last5 AS away_clean_sheets_last5
-    FROM fotmob_matches m
+    FROM provider_matches m
     JOIN team_states h ON h.team_id = m.home_team_id AND h.round_number = m.round_number - 1
         AND h.league_id = %(lid)s
     JOIN team_states a ON a.team_id = m.away_team_id AND a.round_number = m.round_number - 1
@@ -261,11 +261,11 @@ def generate_round(
         match_dir.mkdir(parents=True, exist_ok=True)
 
         # Find DataFrame row for this match
-        df_match = round_df[round_df["fotmob_match_id"].astype(str) == str(fixture_id)]
+        df_match = round_df[round_df["provider_match_id"].astype(str) == str(fixture_id)]
         df_row = df_match.iloc[0] if len(df_match) > 0 else pd.Series()
 
         # Find raw stats row
-        raw_match = raw_df[raw_df["fotmob_match_id"].astype(str) == str(fixture_id)] if len(raw_df) > 0 else pd.DataFrame()
+        raw_match = raw_df[raw_df["provider_match_id"].astype(str) == str(fixture_id)] if len(raw_df) > 0 else pd.DataFrame()
         raw_row = raw_match.iloc[0] if len(raw_match) > 0 else None
 
         # facts.json
@@ -647,7 +647,7 @@ def main() -> int:
     parser.add_argument("round", type=int, help="Round number")
     parser.add_argument("--league", default="PL", help="League short name (default: PL)")
     parser.add_argument("--league-id", type=int, default=47,
-                        help="FotMob league ID (47=PL, 61=Portugal, 268=Brazil)")
+                        help="provider league ID (47=PL, 61=Portugal, 268=Brazil)")
     parser.add_argument("--season", default="2025/26", help="Season (default: 2025/26)")
     parser.add_argument("--intelligence", action="store_true",
                         help="Use v1.5 Match Intelligence Engine (game reading)")
