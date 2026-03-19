@@ -50,3 +50,20 @@ data/
 !src/data/**
 clarity_football.db
 v14_vs_v15_comparison.md
+
+# === IP Protection (hidden from public repo) ===
+# Data scrapers
+scripts/sync_fotmob_playwright.py
+src/data/providers/zerozero.py
+
+# Core intelligence (prompts, decision logic)
+src/intelligence/game_reader_prompt.py
+src/intelligence/decision_engine.py
+src/intelligence/tactical_rubric.py
+
+# ML models & features
+src/models/probabilistic.py
+src/models/feature_builder.py
+
+# Evaluation rubrics
+src/evaluation/rubric.py
